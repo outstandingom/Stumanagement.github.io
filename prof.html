@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Institute Profile - Student Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --bottom-nav-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            padding-bottom: var(--bottom-nav-height);
+            min-height: 100vh;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .institute-logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: var(--shadow);
+        }
+        
+        .institute-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .institute-logo .placeholder {
+            color: var(--primary-blue);
+            font-size: 24px;
+        }
+        
+        .header-text {
+            flex: 1;
+        }
+        
+        .header-text h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: white;
+            color: var(--primary-blue);
+        }
+        
+        .btn-primary:hover {
+            background: #f8f9fa;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: rgba(231, 76, 60, 0.9);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: var(--error);
+            transform: translateY(-2px);
+        }
+        
+        /* Profile Content */
+        .profile-content {
+            padding: 20px 15px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title i {
+            color: var(--primary-blue);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        
+        .institute-code {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        .code-display {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px dashed rgba(255,255,255,0.5);
+        }
+        
+        .code-hint {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: var(--bottom-nav-height);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 0;
+            text-decoration: none;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-blue);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .skeleton-text {
+            height: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .skeleton-title {
+            height: 16px;
+            width: 60%;
+            margin-bottom: 15px;
+        }
+        
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            body {
+                max-width: 400px;
+                margin: 0 auto;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .institute-logo {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .header-text h1 {
+                font-size: 20px;
+            }
+
+            .action-buttons {
+                justify-content: flex-start;
+            }
+        }
+        
+        @media (max-width: 320px) {
+            .profile-content {
+                padding: 15px 10px;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .nav-label {
+                font-size: 9px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                justify-content: center;
+            }
+        }
+        
+        /* Connection Error */
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* No Data State */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Logout Confirmation Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 300px;
+            width: 90%;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn-cancel {
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+        
+        .modal-btn-logout {
+            background: var(--error);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="header-content">
+            <div class="institute-logo" id="instituteLogo">
+                <div class="placeholder">
+                    <i class="fas fa-university"></i>
+                </div>
+            </div>
+            <div class="header-text">
+                <h1 id="instituteName">Loading...</h1>
+                <p id="instituteType">Loading institute details</p>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="editInstitute()">
+                        <i class="fas fa-edit"></i>
+                        Edit Information
+                    </button>
+                    <button class="btn btn-danger" onclick="showLogoutConfirmation()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Connection Error -->
+    <div class="connection-error" id="supabaseError">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="supabaseErrorText">Connection error</span>
+    </div>
+
+    <!-- Profile Content -->
+    <main class="profile-content">
+        <!-- Institute Details Section -->
+        <section class="section" id="instituteSection">
+            <h2 class="section-title">
+                <i class="fas fa-school"></i>
+                Institute Details
+            </h2>
+            <div class="info-grid" id="instituteDetails">
+                <!-- Skeleton loading -->
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+            </div>
+        </section>
+
+        <!-- Contact Information Section -->
+        <section class="section" id="contactSection">
+            <h2 class="section-title">
+                <i class="fas fa-address-book"></i>
+                Contact Information
+            </h2>
+            <div class="info-grid" id="contactDetails">
+                <!-- Skeleton loading -->
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+            </div>
+        </section>
+
+        <!-- Admin/Owner Details Section -->
+        <section class="section" id="adminSection">
+            <h2 class="section-title">
+                <i class="fas fa-user-shield"></i>
+                Admin Details
+            </h2>
+            <div class="info-grid" id="adminDetails">
+                <!-- Skeleton loading -->
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+            </div>
+        </section>
+
+        <!-- Institute Code Section -->
+        <section class="section" id="codeSection">
+            <h2 class="section-title">
+                <i class="fas fa-qrcode"></i>
+                Institute Code
+            </h2>
+            <div class="institute-code">
+                <div class="code-display" id="instituteCodeDisplay">LOADING</div>
+                <p class="code-hint">Share this code with students to join your institute</p>
+            </div>
+        </section>
+
+        <!-- Additional Information Section -->
+        <section class="section" id="additionalSection">
+            <h2 class="section-title">
+                <i class="fas fa-info-circle"></i>
+                Additional Information
+            </h2>
+            <div class="info-grid" id="additionalDetails">
+                <!-- Skeleton loading -->
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="requests.html" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i>
+            <span class="nav-label">Requests</span>
+        </a>
+        <a href="batches.html" class="nav-item">
+            <i class="fas fa-users nav-icon"></i>
+            <span class="nav-label">Batches</span>
+        </a>
+        <a href="attendance.html" class="nav-item">
+            <i class="fas fa-clipboard-check nav-icon"></i>
+            <span class="nav-label">Attendance</span>
+        </a>
+        <a href="dashboard.html" class="nav-item">
+            <i class="fas fa-tachometer-alt nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="profile.html" class="nav-item active">
+            <i class="fas fa-user nav-icon"></i>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <i class="fas fa-sign-out-alt" style="font-size: 48px; color: var(--error); margin-bottom: 15px;"></i>
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout from your account?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="hideLogoutConfirmation()">Cancel</button>
+                <button class="modal-btn modal-btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (error) {
+            console.error('Error initializing Supabase client:', error);
+        }
+
+        // Global variables
+        let currentInstituteData = null;
+        let currentUserData = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const supabaseError = document.getElementById('supabaseError');
+            const instituteName = document.getElementById('instituteName');
+            const instituteType = document.getElementById('instituteType');
+            const instituteLogo = document.getElementById('instituteLogo');
+            const instituteCodeDisplay = document.getElementById('instituteCodeDisplay');
+
+            // Initialize the page
+            initializePage();
+
+            async function initializePage() {
+                await testSupabaseConnection();
+                await loadInstituteData();
+            }
+
+            // Test Supabase connection
+            async function testSupabaseConnection() {
+                if (!supabase) {
+                    showSupabaseError('Connection error: Please refresh the page');
+                    return;
+                }
+                
+                try {
+                    const { data, error } = await supabase.from('admin_institutes').select('count').limit(1);
+                    if (error) throw error;
+                    hideSupabaseError();
+                } catch (error) {
+                    console.error('Supabase connection test failed:', error);
+                    showSupabaseError('Failed to connect to server. Please try again later.');
+                }
+            }
+
+            function showSupabaseError(message) {
+                supabaseError.style.display = 'flex';
+                document.getElementById('supabaseErrorText').textContent = message;
+            }
+
+            function hideSupabaseError() {
+                supabaseError.style.display = 'none';
+            }
+
+            // Load institute and user data
+            async function loadInstituteData() {
+                try {
+                    // Get current user
+                    const { data: { user }, error: userError } = await supabase.auth.getUser();
+                    if (userError) throw userError;
+                    
+                    if (!user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+
+                    // Get user data from users table
+                    const { data: userData, error: userDataError } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', user.id)
+                        .single();
+
+                    if (userDataError) throw userDataError;
+                    currentUserData = userData;
+
+                    // Get institute data
+                    const { data: instituteData, error: instituteError } = await supabase
+                        .from('admin_institutes')
+                        .select('*')
+                        .eq('user_id', userData.user_id)
+                        .single();
+
+                    if (instituteError) {
+                        if (instituteError.code === 'PGRST116') {
+                            // No institute found - user is not an admin
+                            showNoInstituteData();
+                            return;
+                        }
+                        throw instituteError;
+                    }
+
+                    currentInstituteData = instituteData;
+
+                    // Display all data
+                    displayInstituteData(instituteData);
+                    displayUserData(userData);
+                    
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    showSupabaseError('Error loading profile data: ' + error.message);
+                }
+            }
+
+            // Display institute data
+            function displayInstituteData(institute) {
+                // Header information
+                instituteName.textContent = institute.institute_name;
+                instituteType.textContent = institute.institute_type ? institute.institute_type.charAt(0).toUpperCase() + institute.institute_type.slice(1) : 'Institute';
+                
+                // Institute logo
+                if (institute.logo_url) {
+                    instituteLogo.innerHTML = `<img src="${institute.logo_url}" alt="${institute.institute_name}" onerror="this.style.display='none'; this.parentElement.querySelector('.placeholder').style.display='flex';" />`;
+                    const placeholder = instituteLogo.querySelector('.placeholder');
+                    if (placeholder) placeholder.style.display = 'none';
+                }
+
+                // Institute details
+                const instituteDetails = document.getElementById('instituteDetails');
+                instituteDetails.innerHTML = `
+                    <div class="info-item">
+                        <span class="info-label">Institute Type</span>
+                        <span class="info-value">${institute.institute_type ? institute.institute_type.charAt(0).toUpperCase() + institute.institute_type.slice(1) : 'Not specified'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Registration Number</span>
+                        <span class="info-value">${institute.registration_number || 'Not provided'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Address</span>
+                        <span class="info-value">${institute.address || 'Not provided'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">City</span>
+                        <span class="info-value">${institute.city || 'Not provided'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">State</span>
+                        <span class="info-value">${institute.state || 'Not provided'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">PIN Code</span>
+                        <span class="info-value">${institute.pincode || 'Not provided'}</span>
+                    </div>
+                `;
+
+                // Contact information
+                const contactDetails = document.getElementById('contactDetails');
+                contactDetails.innerHTML = `
+                    <div class="info-item">
+                        <span class="info-label">Contact Number</span>
+                        <span class="info-value">${institute.contact_number || 'Not provided'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">${institute.email || 'Not provided'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Website</span>
+                        <span class="info-value">${institute.website ? `<a href="${institute.website}" target="_blank">${institute.website}</a>` : 'Not provided'}</span>
+                    </div>
+                `;
+
+                // Institute code
+                instituteCodeDisplay.textContent = institute.institute_code || 'NOT SET';
+
+                // Additional information
+                const additionalDetails = document.getElementById('additionalDetails');
+                additionalDetails.innerHTML = `
+                    <div class="info-item">
+                        <span class="info-label">Number of Branches</span>
+                        <span class="info-value">${institute.branches || 0}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Working Hours</span>
+                        <span class="info-value">${institute.working_hours || 'Not specified'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Courses Offered</span>
+                        <span class="info-value">${institute.courses_offered || 'Not specified'}</span>
+                    </div>
+                    ${institute.payment_details ? `
+                    <div class="info-item">
+                        <span class="info-label">Payment Details</span>
+                        <span class="info-value">${institute.payment_details}</span>
+                    </div>
+                    ` : ''}
+                    ${institute.social_media ? `
+                    <div class="info-item">
+                        <span class="info-label">Social Media</span>
+                        <span class="info-value">${institute.social_media}</span>
+                    </div>
+                    ` : ''}
+                `;
+            }
+
+            // Display user data
+            function displayUserData(user) {
+                const adminDetails = document.getElementById('adminDetails');
+                adminDetails.innerHTML = `
+                    <div class="info-item">
+                        <span class="info-label">Full Name</span>
+                        <span class="info-value">${user.full_name}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Phone Number</span>
+                        <span class="info-value">${user.phone}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value">${user.email}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Role</span>
+                        <span class="info-value" style="color: var(--primary-blue); font-weight: bold;">${user.role ? user.role.toUpperCase() : 'STUDENT'}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">User ID</span>
+                        <span class="info-value">${user.user_id}</span>
+                    </div>
+                `;
+            }
+
+            // Show no institute data state
+            function showNoInstituteData() {
+                instituteName.textContent = 'No Institute Found';
+                instituteType.textContent = 'Setup required';
+                
+                const profileContent = document.querySelector('.profile-content');
+                profileContent.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-university"></i>
+                        <h3>No Institute Setup</h3>
+                        <p>You haven't setup an institute yet. Please setup your institute to access admin features.</p>
+                        <br>
+                        <a href="setup-institute.html" style="
+                            display: inline-block;
+                            background: var(--primary-blue);
+                            color: white;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            text-decoration: none;
+                            font-weight: 500;
+                        ">Setup Institute</a>
+                    </div>
+                `;
+            }
+        });
+
+        // Logout functions
+        function showLogoutConfirmation() {
+            document.getElementById('logoutModal').style.display = 'flex';
+        }
+
+        function hideLogoutConfirmation() {
+            document.getElementById('logoutModal').style.display = 'none';
+        }
+
+        async function logout() {
+            try {
+                const { error } = await supabase.auth.signOut();
+                if (error) throw error;
+                
+                // Redirect to login page
+                window.location.href = 'login.html';
+            } catch (error) {
+                console.error('Error logging out:', error);
+                alert('Error logging out: ' + error.message);
+            }
+        }
+
+        // Edit institute function
+        function editInstitute() {
+            if (currentInstituteData) {
+                // Redirect to edit page with institute data
+                window.location.href = `edit-institute.html?id=${currentInstituteData.id}`;
+            } else {
+                alert('No institute data available to edit.');
+            }
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                hideLogoutConfirmation();
+            }
+        });
+    </script>
+</body>
+</html>
