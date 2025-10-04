@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System - Become Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .header {
+            background: linear-gradient(to right, var(--primary-blue), var(--primary-dark));
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+        }
+        
+        .form-container {
+            padding: 30px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin: 25px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+        }
+        
+        .section-title:first-child {
+            margin-top: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        .form-group label.required::after {
+            content: " *";
+            color: var(--error);
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 14px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background-color: #f9f9f9;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .form-group input:hover, .form-group select:hover, .form-group textarea:hover {
+            border-color: #bdc3c7;
+        }
+        
+        .input-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .input-icon:hover {
+            color: var(--primary-blue);
+        }
+        
+        .error-message {
+            color: var(--error);
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .success-message {
+            color: var(--success);
+            font-size: 16px;
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(46, 204, 113, 0.1);
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(to right, var(--primary-blue), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn-submit:hover {
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-blue));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+        
+        .btn-submit:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            color: var(--text-light);
+            font-size: 15px;
+        }
+        
+        .login-link a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .login-link a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-success {
+            border-color: var(--success) !important;
+        }
+        
+        .input-error {
+            border-color: var(--error) !important;
+        }
+        
+        .institute-code {
+            background-color: rgba(52, 152, 219, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .institute-code h3 {
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+        
+        .code-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-blue);
+            letter-spacing: 2px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            border: 2px dashed var(--primary-blue);
+        }
+        
+        .user-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .user-info h3 {
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+        }
+        
+        .user-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .user-detail {
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid var(--primary-light);
+        }
+        
+        .user-detail label {
+            font-weight: 600;
+            color: var(--text-dark);
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        .user-detail span {
+            color: var(--text-light);
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .user-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Student Management System</h1>
+            <p>Become an Admin - Institute Setup</p>
+        </div>
+        
+        <div class="form-container">
+            <div class="connection-error" id="supabaseError">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="supabaseErrorText">Connection error: Please refresh the page</span>
+            </div>
+            
+            <div class="user-info" id="userInfoSection" style="display: none;">
+                <h3>Your Account Details</h3>
+                <div class="user-details">
+                    <div class="user-detail">
+                        <label>Full Name</label>
+                        <span id="currentUserName"></span>
+                    </div>
+                    <div class="user-detail">
+                        <label>Phone Number</label>
+                        <span id="currentUserPhone"></span>
+                    </div>
+                    <div class="user-detail">
+                        <label>Email Address</label>
+                        <span id="currentUserEmail"></span>
+                    </div>
+                    <div class="user-detail">
+                        <label>Current Role</label>
+                        <span id="currentUserRole"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="institute-code" id="instituteCodeSection" style="display: none;">
+                <h3>Your Institute Code</h3>
+                <div class="code-display" id="instituteCodeDisplay"></div>
+                <p style="margin-top: 10px; font-size: 14px; color: var(--text-light);">
+                    Share this code with your students to join your institute
+                </p>
+            </div>
+            
+            <form id="adminSetupForm">
+                <h3 class="section-title">Institute Details</h3>
+                
+                <div class="form-group">
+                    <label for="instituteName" class="required">Institute Name</label>
+                    <input type="text" id="instituteName" placeholder="Enter institute name" required>
+                    <div class="error-message" id="instituteNameError">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Please enter institute name</span>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="instituteType" class="required">Type of Institute</label>
+                        <select id="instituteType" required>
+                            <option value="">Select type</option>
+                            <option value="school">School</option>
+                            <option value="coaching">Coaching Center</option>
+                            <option value="college">College</option>
+                            <option value="training">Training Center</option>
+                            <option value="university">University</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <div class="error-message" id="instituteTypeError">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Please select institute type</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registrationNumber">Registration/License Number</label>
+                        <input type="text" id="registrationNumber" placeholder="Enter registration number">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="instituteLogo">Logo URL (Optional)</label>
+                    <input type="url" id="instituteLogo" placeholder="https://example.com/logo.png">
+                </div>
+                
+                <div class="form-group">
+                    <label for="instituteAddress" class="required">Address</label>
+                    <textarea id="instituteAddress" placeholder="Enter full address with landmark" required></textarea>
+                    <div class="error-message" id="instituteAddressError">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Please enter institute address</span>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city" class="required">City</label>
+                        <input type="text" id="city" placeholder="Enter city" required>
+                        <div class="error-message" id="cityError">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Please enter city</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="state" class="required">State</label>
+                        <input type="text" id="state" placeholder="Enter state" required>
+                        <div class="error-message" id="stateError">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Please enter state</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="pincode" class="required">PIN Code</label>
+                        <input type="text" id="pincode" placeholder="Enter PIN code" required maxlength="6">
+                        <div class="error-message" id="pincodeError">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Please enter valid PIN code</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="institutePhone" class="required">Institute Contact Number</label>
+                        <input type="tel" id="institutePhone" placeholder="Enter institute contact number" required>
+                        <div class="error-message" id="institutePhoneError">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Please enter valid contact number</span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="instituteEmail" class="required">Institute Email</label>
+                        <input type="email" id="instituteEmail" placeholder="Enter institute email" required>
+                        <div class="error-message" id="instituteEmailError">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span>Please enter valid email address</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="website">Website (Optional)</label>
+                    <input type="url" id="website" placeholder="https://example.com">
+                </div>
+                
+                <h3 class="section-title">Additional Information (Optional)</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="branches">Number of Branches</label>
+                        <input type="number" id="branches" placeholder="0" min="0">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="workingHours">Working Hours</label>
+                        <input type="text" id="workingHours" placeholder="e.g., 9:00 AM - 6:00 PM">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="coursesOffered">Courses Offered</label>
+                    <textarea id="coursesOffered" placeholder="List courses separated by commas"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="paymentDetails">Payment Details (Bank/UPI)</label>
+                    <textarea id="paymentDetails" placeholder="Bank account or UPI details"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="socialMedia">Social Media Links</label>
+                    <textarea id="socialMedia" placeholder="Enter social media profile URLs"></textarea>
+                </div>
+                
+                <div class="terms">
+                    <input type="checkbox" id="termsAgree" required>
+                    <label for="termsAgree">I agree to the <a href="#">Admin Terms of Service</a> and confirm that I have the authority to represent this institute</label>
+                </div>
+                
+                <button type="submit" class="btn-submit" id="setupButton">
+                    <span id="setupText">Setup Institute & Become Admin</span>
+                    <span id="setupLoader" class="loading" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <div class="success-message" id="successMessage">
+                <i class="fas fa-check-circle"></i>
+                <span>Institute setup completed successfully! You are now an admin.</span>
+            </div>
+            
+            <div class="login-link">
+                <a href="dashboard.html">Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('Supabase client initialized successfully');
+        } catch (error) {
+            console.error('Error initializing Supabase client:', error);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const adminSetupForm = document.getElementById('adminSetupForm');
+            const setupButton = document.getElementById('setupButton');
+            const setupLoader = document.getElementById('setupLoader');
+            const setupText = document.getElementById('setupText');
+            const successMessage = document.getElementById('successMessage');
+            const supabaseError = document.getElementById('supabaseError');
+            const instituteCodeSection = document.getElementById('instituteCodeSection');
+            const instituteCodeDisplay = document.getElementById('instituteCodeDisplay');
+            const userInfoSection = document.getElementById('userInfoSection');
+            
+            let currentUser = null;
+            let currentUserData = null;
+
+            // Initialize the page
+            initializePage();
+
+            async function initializePage() {
+                await testSupabaseConnection();
+                await getCurrentUser();
+                await loadCurrentUserData();
+                displayUserInfo();
+            }
+
+            // Test Supabase connection
+            async function testSupabaseConnection() {
+                if (!supabase) {
+                    showSupabaseError('Connection error: Please refresh the page');
+                    return;
+                }
+                
+                try {
+                    const { data, error } = await supabase.from('users').select('count').limit(1);
+                    if (error) throw error;
+                    hideSupabaseError();
+                } catch (error) {
+                    console.error('Supabase connection test failed:', error);
+                    showSupabaseError('Failed to connect to server. Please try again later.');
+                }
+            }
+
+            // Get current authenticated user
+            async function getCurrentUser() {
+                try {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error) throw error;
+                    currentUser = user;
+                    
+                    if (!currentUser) {
+                        alert('Please login to setup an institute');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error getting current user:', error);
+                    alert('Please login to continue');
+                    window.location.href = 'login.html';
+                }
+            }
+
+            // Load current user data from users table
+            async function loadCurrentUserData() {
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', currentUser.id)
+                        .single();
+                    
+                    if (error) throw error;
+                    currentUserData = data;
+                    
+                    // Check if user is already an admin
+                    if (currentUserData.role === 'admin') {
+                        alert('You are already an admin!');
+                        window.location.href = 'admin-dashboard.html';
+                    }
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                    alert('Error loading your profile data');
+                }
+            }
+
+            // Display current user information
+            function displayUserInfo() {
+                if (currentUserData) {
+                    document.getElementById('currentUserName').textContent = currentUserData.full_name;
+                    document.getElementById('currentUserPhone').textContent = currentUserData.phone;
+                    document.getElementById('currentUserEmail').textContent = currentUserData.email;
+                    document.getElementById('currentUserRole').textContent = currentUserData.role;
+                    userInfoSection.style.display = 'block';
+                }
+            }
+
+            function showSupabaseError(message) {
+                supabaseError.style.display = 'flex';
+                document.getElementById('supabaseErrorText').textContent = message;
+            }
+
+            function hideSupabaseError() {
+                supabaseError.style.display = 'none';
+            }
+
+            // Generate unique institute code
+            function generateInstituteCode() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return code;
+            }
+
+            // Form submission - UPDATED: Only update role and create institute
+            adminSetupForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validate required fields
+                const isTermsAccepted = document.getElementById('termsAgree').checked;
+                
+                if (!isTermsAccepted) {
+                    alert('Please agree to the terms and conditions');
+                    return;
+                }
+                
+                // Show loading state
+                setupButton.disabled = true;
+                setupText.textContent = 'Setting up Institute...';
+                setupLoader.style.display = 'inline-block';
+                
+                try {
+                    // Get form data
+                    const formData = {
+                        // Institute Details
+                        instituteName: document.getElementById('instituteName').value.trim(),
+                        instituteType: document.getElementById('instituteType').value,
+                        registrationNumber: document.getElementById('registrationNumber').value.trim(),
+                        instituteLogo: document.getElementById('instituteLogo').value.trim(),
+                        instituteAddress: document.getElementById('instituteAddress').value.trim(),
+                        city: document.getElementById('city').value.trim(),
+                        state: document.getElementById('state').value.trim(),
+                        pincode: document.getElementById('pincode').value.trim(),
+                        institutePhone: document.getElementById('institutePhone').value.trim().replace(/\D/g, ''),
+                        instituteEmail: document.getElementById('instituteEmail').value.trim(),
+                        website: document.getElementById('website').value.trim(),
+                        
+                        // Additional Information
+                        branches: document.getElementById('branches').value || 0,
+                        workingHours: document.getElementById('workingHours').value.trim(),
+                        coursesOffered: document.getElementById('coursesOffered').value.trim(),
+                        paymentDetails: document.getElementById('paymentDetails').value.trim(),
+                        socialMedia: document.getElementById('socialMedia').value.trim(),
+                        
+                        // Generate institute code
+                        instituteCode: generateInstituteCode()
+                    };
+                    
+                    // Validate required fields
+                    if (!formData.instituteName || !formData.instituteType || !formData.instituteAddress || 
+                        !formData.city || !formData.state || !formData.pincode || !formData.institutePhone || 
+                        !formData.instituteEmail) {
+                        throw new Error('Please fill all required fields');
+                    }
+                    
+                    // STEP 1: Update user role to 'admin' in users collection
+                    const { error: updateError } = await supabase
+                        .from('users')
+                        .update({ 
+                            role: 'admin',
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', currentUserData.user_id);
+                    
+                    if (updateError) {
+                        throw new Error('Failed to update user role: ' + updateError.message);
+                    }
+                    
+                    // STEP 2: Insert institute data into admin_institutes collection
+                    const { data: instituteData, error: instituteError } = await supabase
+                        .from('admin_institutes')
+                        .insert([
+                            {
+                                user_id: currentUserData.user_id,
+                                institute_name: formData.instituteName,
+                                institute_type: formData.instituteType,
+                                registration_number: formData.registrationNumber || null,
+                                logo_url: formData.instituteLogo || null,
+                                address: formData.instituteAddress,
+                                city: formData.city,
+                                state: formData.state,
+                                pincode: formData.pincode,
+                                contact_number: formData.institutePhone,
+                                email: formData.instituteEmail,
+                                website: formData.website || null,
+                                institute_code: formData.instituteCode,
+                                branches: formData.branches,
+                                working_hours: formData.workingHours || null,
+                                courses_offered: formData.coursesOffered || null,
+                                payment_details: formData.paymentDetails || null,
+                                social_media: formData.socialMedia || null,
+                                created_at: new Date().toISOString()
+                            }
+                        ]);
+                    
+                    if (instituteError) {
+                        // If institute creation fails, revert the user role
+                        await supabase
+                            .from('users')
+                            .update({ 
+                                role: 'student',
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('user_id', currentUserData.user_id);
+                        throw new Error('Institute creation failed: ' + instituteError.message);
+                    }
+                    
+                    // Show success message and institute code
+                    successMessage.style.display = 'flex';
+                    adminSetupForm.style.display = 'none';
+                    instituteCodeSection.style.display = 'block';
+                    instituteCodeDisplay.textContent = formData.instituteCode;
+                    
+                    // Update displayed user role
+                    document.getElementById('currentUserRole').textContent = 'admin';
+                    
+                } catch (error) {
+                    console.error('Error setting up institute:', error);
+                    alert('Error setting up institute: ' + error.message);
+                    
+                    // Reset button state
+                    setupButton.disabled = false;
+                    setupText.textContent = 'Setup Institute & Become Admin';
+                    setupLoader.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
