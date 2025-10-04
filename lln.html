@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System - Role Selection</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --light-blue: #e8f4fc;
+            --dark-blue: #2980b9;
+            --white: #ffffff;
+            --gray-light: #f8f9fa;
+            --gray: #6c757d;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --error: #e74c3c;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--light-blue) 0%, var(--white) 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .header {
+            background-color: var(--white);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+        
+        .logo-placeholder {
+            width: 50px;
+            height: 50px;
+            background-color: var(--primary-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .system-title {
+            color: var(--primary-blue);
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+        
+        .role-selection-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+        
+        .role-selection-card {
+            background-color: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .welcome-heading {
+            color: var(--primary-blue);
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        /* Role Selection */
+        .role-cards {
+            display: flex;
+            justify-content: space-between;
+            margin: 1.5rem 0;
+            gap: 1rem;
+        }
+        
+        .role-card {
+            flex: 1;
+            border: 2px solid #dee2e6;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .role-card:hover {
+            border-color: var(--primary-blue);
+            transform: translateY(-5px);
+        }
+        
+        .role-card.selected {
+            border-color: var(--primary-blue);
+            background-color: var(--light-blue);
+            transform: translateY(-5px);
+        }
+        
+        .role-icon {
+            font-size: 2.5rem;
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+        }
+        
+        .role-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin-bottom: 0.5rem;
+        }
+        
+        .role-description {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--dark-blue);
+            border-color: var(--dark-blue);
+        }
+        
+        .footer {
+            background-color: var(--white);
+            padding: 1rem 0;
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .footer a {
+            color: var(--gray);
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            color: var(--primary-blue);
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .role-cards {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="logo-placeholder">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center">
+                    <h1 class="system-title">Student Management System</h1>
+                </div>
+                <div class="col-md-4 text-end">
+                    <select class="form-select form-select-sm w-auto d-inline-block">
+                        <option selected>English</option>
+                        <option>Español</option>
+                        <option>Français</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="role-selection-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="role-selection-card">
+                        <h2 class="welcome-heading">Select Your Role</h2>
+                        <p class="text-center mb-4">Choose your role to access the appropriate interface</p>
+                        
+                        <!-- Role Selection Cards -->
+                        <div class="role-cards">
+                            <div class="role-card" data-role="student">
+                                <div class="role-icon">
+                                    <i class="fas fa-user-graduate"></i>
+                                </div>
+                                <div class="role-name">Student</div>
+                                <div class="role-description">
+                                    Access course materials, submit assignments, and track your academic progress.
+                                </div>
+                            </div>
+                            <div class="role-card" data-role="teacher">
+                                <div class="role-icon">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                </div>
+                                <div class="role-name">Teacher</div>
+                                <div class="role-description">
+                                    Manage courses, create assignments, and evaluate student performance.
+                                </div>
+                            </div>
+                            <div class="role-card" data-role="admin">
+                                <div class="role-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="role-name">Administrator</div>
+                                <div class="role-description">
+                                    Manage system users, courses, and oversee institutional operations.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="button" class="btn btn-primary" id="continueBtn" disabled>Continue</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="footer mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start">
+                    <p>&copy; 2023 Student Management System. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a href="#" class="me-3">Privacy Policy</a>
+                    <a href="#" class="me-3">Terms of Service</a>
+                    <a href="#">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleCards = document.querySelectorAll('.role-card');
+            const continueBtn = document.getElementById('continueBtn');
+            let selectedRole = null;
+
+            // Add click event listeners to role cards
+            roleCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    // Remove selected class from all cards
+                    roleCards.forEach(c => c.classList.remove('selected'));
+                    
+                    // Add selected class to clicked card
+                    this.classList.add('selected');
+                    
+                    // Store selected role
+                    selectedRole = this.getAttribute('data-role');
+                    
+                    // Enable continue button
+                    continueBtn.disabled = false;
+                });
+            });
+
+            // Add click event listener to continue button
+            continueBtn.addEventListener('click', function() {
+                if (selectedRole) {
+                    // Redirect based on selected role
+                    switch(selectedRole) {
+                        case 'student':
+                            window.location.href = 'student.html';
+                            break;
+                        case 'teacher':
+                            window.location.href = 'teacher.html';
+                            break;
+                        case 'admin':
+                            window.location.href = 'Admin.html';
+                            break;
+                        default:
+                            console.error('Unknown role selected');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
