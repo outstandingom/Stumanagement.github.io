@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System - Register</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .header {
+            background: linear-gradient(to right, var(--primary-blue), var(--primary-dark));
+            color: white;
+            padding: 25px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        .input-with-icon {
+            position: relative;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 14px 45px 14px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background-color: #f9f9f9;
+        }
+        
+        .form-group input:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .form-group input:hover {
+            border-color: #bdc3c7;
+        }
+        
+        .input-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        
+        .input-icon:hover {
+            color: var(--primary-blue);
+        }
+        
+        .password-strength {
+            height: 4px;
+            background-color: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: width 0.3s, background-color 0.3s;
+        }
+        
+        .error-message {
+            color: var(--error);
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .success-message {
+            color: var(--success);
+            font-size: 16px;
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: rgba(46, 204, 113, 0.1);
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .btn-submit {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(to right, var(--primary-blue), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn-submit:hover {
+            background: linear-gradient(to right, var(--primary-dark), var(--primary-blue));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+        
+        .btn-submit:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            color: var(--text-light);
+            font-size: 15px;
+        }
+        
+        .login-link a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .login-link a:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .validation-hint {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .validation-ok {
+            color: var(--success);
+        }
+        
+        .validation-error {
+            color: var(--error);
+        }
+        
+        .terms {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        .terms a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+        
+        .terms a:hover {
+            text-decoration: underline;
+        }
+        
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .input-success {
+            border-color: var(--success) !important;
+        }
+        
+        .input-error {
+            border-color: var(--error) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Student Management System</h1>
+            <p>Create your account to get started</p>
+        </div>
+        
+        <div class="form-container">
+            <div class="connection-error" id="supabaseError">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="supabaseErrorText">Connection error: Please refresh the page</span>
+            </div>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="fullName" placeholder="Enter your full name" required>
+                        <i class="input-icon fas fa-user"></i>
+                    </div>
+                    <div class="error-message" id="nameError">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Please enter your full name</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phoneNumber">Phone Number</label>
+                    <div class="input-with-icon">
+                        <input type="tel" id="phoneNumber" placeholder="Enter your phone number" required>
+                        <i class="input-icon fas fa-phone"></i>
+                    </div>
+                    <div class="error-message" id="phoneError">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Please enter a valid 10-digit phone number</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerEmail">Email Address</label>
+                    <div class="input-with-icon">
+                        <input type="email" id="registerEmail" placeholder="Enter your email address" required>
+                        <i class="input-icon fas fa-envelope"></i>
+                    </div>
+                    <div class="error-message" id="emailError">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Please enter a valid email address</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="registerPassword">Password</label>
+                    <div class="input-with-icon">
+                        <input type="password" id="registerPassword" placeholder="Create a password" required>
+                        <i class="input-icon fas fa-eye" id="registerPasswordToggle"></i>
+                    </div>
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                    </div>
+                    <div class="error-message" id="passwordError">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Password must be at least 8 characters with uppercase, lowercase, number and special character</span>
+                    </div>
+                    <div class="validation-hint" id="passwordStrengthText">
+                        Password strength: <span id="strengthText">Weak</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <div class="input-with-icon">
+                        <input type="password" id="confirmPassword" placeholder="Confirm your password" required>
+                        <i class="input-icon fas fa-eye" id="confirmPasswordToggle"></i>
+                    </div>
+                    <div class="error-message" id="confirmPasswordError">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Passwords do not match</span>
+                    </div>
+                </div>
+                
+                <div class="terms">
+                    <input type="checkbox" id="termsAgree" required>
+                    <label for="termsAgree">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                </div>
+                
+                <button type="submit" class="btn-submit" id="registerButton">
+                    <span id="registerText">Create Account</span>
+                    <span id="registerLoader" class="loading" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <div class="success-message" id="successMessage">
+                <i class="fas fa-check-circle"></i>
+                <span>Account created successfully! Redirecting to login...</span>
+            </div>
+            
+            <div class="login-link">
+                Already have an account? <a href="login.html">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client with error handling
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+                auth: {
+                    autoRefreshToken: true,
+                    persistSession: true,
+                    detectSessionInUrl: true
+                }
+            });
+            console.log('Supabase client initialized successfully');
+        } catch (error) {
+            console.error('Error initializing Supabase client:', error);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test Supabase connection
+            testSupabaseConnection();
+            
+            // DOM Elements
+            const registerForm = document.getElementById('registerForm');
+            const fullNameInput = document.getElementById('fullName');
+            const phoneInput = document.getElementById('phoneNumber');
+            const emailInput = document.getElementById('registerEmail');
+            const passwordInput = document.getElementById('registerPassword');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const termsCheckbox = document.getElementById('termsAgree');
+            const registerButton = document.getElementById('registerButton');
+            const registerLoader = document.getElementById('registerLoader');
+            const registerText = document.getElementById('registerText');
+            const successMessage = document.getElementById('successMessage');
+            const supabaseError = document.getElementById('supabaseError');
+            
+            // Password toggle elements
+            const registerPasswordToggle = document.getElementById('registerPasswordToggle');
+            const confirmPasswordToggle = document.getElementById('confirmPasswordToggle');
+            
+            // Password strength elements
+            const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+            const passwordStrengthText = document.getElementById('passwordStrengthText');
+            const strengthText = document.getElementById('strengthText');
+
+            // Validation patterns
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const phonePattern = /^[6-9]\d{9}$/; // Indian phone number format
+            const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+            // Test Supabase connection
+            async function testSupabaseConnection() {
+                if (!supabase) {
+                    console.error('Supabase client not initialized');
+                    showSupabaseError('Connection error: Please refresh the page');
+                    return;
+                }
+                
+                try {
+                    // Test the connection by making a simple query
+                    const { data, error } = await supabase.from('users').select('count').limit(1);
+                    
+                    if (error) {
+                        console.error('Supabase connection test failed:', error);
+                        if (error.message.includes('JWT')) {
+                            showSupabaseError('Authentication error: Invalid API key. Please check your Supabase configuration.');
+                        } else {
+                            showSupabaseError('Connection error: ' + error.message);
+                        }
+                    } else {
+                        console.log('Supabase connection test successful');
+                        hideSupabaseError();
+                    }
+                } catch (error) {
+                    console.error('Supabase connection test error:', error);
+                    showSupabaseError('Failed to connect to server. Please try again later.');
+                }
+            }
+
+            function showSupabaseError(message) {
+                supabaseError.style.display = 'flex';
+                document.getElementById('supabaseErrorText').textContent = message;
+            }
+
+            function hideSupabaseError() {
+                supabaseError.style.display = 'none';
+            }
+
+            // Password toggle functionality
+            registerPasswordToggle.addEventListener('click', function() {
+                togglePasswordVisibility(passwordInput, this);
+            });
+
+            confirmPasswordToggle.addEventListener('click', function() {
+                togglePasswordVisibility(confirmPasswordInput, this);
+            });
+
+            function togglePasswordVisibility(input, toggle) {
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                toggle.classList.toggle('fa-eye');
+                toggle.classList.toggle('fa-eye-slash');
+            }
+
+            // Real-time validation
+            fullNameInput.addEventListener('blur', validateFullName);
+            phoneInput.addEventListener('blur', validatePhone);
+            emailInput.addEventListener('blur', validateEmail);
+            passwordInput.addEventListener('input', validatePassword);
+            confirmPasswordInput.addEventListener('blur', validateConfirmPassword);
+            termsCheckbox.addEventListener('change', validateTerms);
+
+            // Password strength indicator
+    passwordInput.addEventListener('input', updatePasswordStrength);
+
+            function validateFullName() {
+                const name = fullNameInput.value.trim();
+                const nameError = document.getElementById('nameError');
+                
+                if (!name) {
+                    showError(fullNameInput, nameError, 'Please enter your full name');
+                    return false;
+                }
+                
+                if (name.length < 2) {
+                    showError(fullNameInput, nameError, 'Name must be at least 2 characters long');
+                    return false;
+                }
+                
+                showSuccess(fullNameInput, nameError);
+                return true;
+            }
+
+            function validatePhone() {
+                const phone = phoneInput.value.trim();
+                const phoneError = document.getElementById('phoneError');
+                const digitsOnly = phone.replace(/\D/g, '');
+                
+                if (!phone) {
+                    showError(phoneInput, phoneError, 'Please enter your phone number');
+                    return false;
+                }
+                
+                if (!phonePattern.test(digitsOnly)) {
+                    showError(phoneInput, phoneError, 'Please enter a valid 10-digit phone number');
+                    return false;
+                }
+                
+                showSuccess(phoneInput, phoneError);
+                return true;
+            }
+
+            function validateEmail() {
+                const email = emailInput.value.trim();
+                const emailError = document.getElementById('emailError');
+                
+                if (!email) {
+                    showError(emailInput, emailError, 'Please enter your email address');
+                    return false;
+                }
+                
+                if (!emailPattern.test(email)) {
+                    showError(emailInput, emailError, 'Please enter a valid email address');
+                    return false;
+                }
+                
+                showSuccess(emailInput, emailError);
+                return true;
+            }
+
+            function validatePassword() {
+                const password = passwordInput.value;
+                const passwordError = document.getElementById('passwordError');
+                
+                if (!password) {
+                    showError(passwordInput, passwordError, 'Please enter a password');
+                    return false;
+                }
+                
+                if (!passwordPattern.test(password)) {
+                    showError(passwordInput, passwordError, 'Password must be at least 8 characters with uppercase, lowercase, number and special character');
+                    return false;
+                }
+                
+                showSuccess(passwordInput, passwordError);
+                return true;
+            }
+
+            function validateConfirmPassword() {
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+                const confirmPasswordError = document.getElementById('confirmPasswordError');
+                
+                if (!confirmPassword) {
+                    showError(confirmPasswordInput, confirmPasswordError, 'Please confirm your password');
+                    return false;
+                }
+                
+                if (password !== confirmPassword) {
+                    showError(confirmPasswordInput, confirmPasswordError, 'Passwords do not match');
+                    return false;
+                }
+                
+                showSuccess(confirmPasswordInput, confirmPasswordError);
+                return true;
+            }
+
+            function validateTerms() {
+                if (!termsCheckbox.checked) {
+                    return false;
+                }
+                return true;
+            }
+
+            function updatePasswordStrength() {
+                const password = passwordInput.value;
+                let strength = 0;
+                let strengthTextValue = 'Weak';
+                let strengthColor = '#e74c3c';
+                
+                if (password.length >= 8) strength += 25;
+                if (/[a-z]/.test(password)) strength += 25;
+                if (/[A-Z]/.test(password)) strength += 25;
+                if (/[0-9]/.test(password) && /[@$!%*?&]/.test(password)) strength += 25;
+                
+                passwordStrengthBar.style.width = `${strength}%`;
+                
+                if (strength >= 75) {
+                    strengthTextValue = 'Strong';
+                    strengthColor = '#2ecc71';
+                } else if (strength >= 50) {
+                    strengthTextValue = 'Medium';
+                    strengthColor = '#f39c12';
+                }
+                
+                passwordStrengthBar.style.backgroundColor = strengthColor;
+                strengthText.textContent = strengthTextValue;
+                passwordStrengthText.style.display = 'block';
+                passwordStrengthText.style.color = strengthColor;
+            }
+
+            function showError(input, errorElement, message) {
+                input.classList.add('input-error');
+                input.classList.remove('input-success');
+                errorElement.querySelector('span').textContent = message;
+                errorElement.style.display = 'flex';
+            }
+
+            function showSuccess(input, errorElement) {
+                input.classList.remove('input-error');
+                input.classList.add('input-success');
+                errorElement.style.display = 'none';
+            }
+
+            // Form submission
+            registerForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validate all fields
+                const isFullNameValid = validateFullName();
+                const isPhoneValid = validatePhone();
+                const isEmailValid = validateEmail();
+                const isPasswordValid = validatePassword();
+                const isConfirmPasswordValid = validateConfirmPassword();
+                const isTermsAccepted = validateTerms();
+                
+                if (!isFullNameValid || !isPhoneValid || !isEmailValid || 
+                    !isPasswordValid || !isConfirmPasswordValid || !isTermsAccepted) {
+                    alert('Please fix the errors in the form before submitting.');
+                    return;
+                }
+                
+                // Show loading state
+                registerButton.disabled = true;
+                registerText.textContent = 'Creating Account...';
+                registerLoader.style.display = 'inline-block';
+                
+                try {
+                    // Get form data
+                    const formData = {
+                        fullName: fullNameInput.value.trim(),
+                        phone: phoneInput.value.trim().replace(/\D/g, ''),
+                        email: emailInput.value.trim(),
+                        password: passwordInput.value
+                    };
+                    
+                    // Create user in Supabase Auth
+                    const { data: authData, error: authError } = await supabase.auth.signUp({
+                        email: formData.email,
+                        password: formData.password,
+                    });
+                    
+                    if (authError) {
+                        throw new Error(authError.message);
+                    }
+                    
+                    // Get the next sequential user ID
+                    const userId = await getNextUserId();
+                    
+                    // Insert user data into the database
+                    const { data: userData, error: userError } = await supabase
+                        .from('users')
+                        .insert([
+                            {
+                                user_id: userId,
+                                auth_id: authData.user.id,
+                                full_name: formData.fullName,
+                                phone: formData.phone,
+                                email: formData.email,
+                                created_at: new Date().toISOString()
+                            }
+                        ]);
+                    
+                    if (userError) {
+                        throw new Error(userError.message);
+                    }
+                    
+                    // Show success message
+                    successMessage.style.display = 'flex';
+                    registerForm.style.display = 'none';
+                    
+                    // Redirect to login after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = 'login.html';
+                    }, 2000);
+                    
+                } catch (error) {
+                    console.error('Error creating account:', error);
+                    alert('Error creating account: ' + error.message);
+                    
+                    // Reset button state
+                    registerButton.disabled = false;
+                    registerText.textContent = 'Create Account';
+                    registerLoader.style.display = 'none';
+                }
+            });
+
+            // Get next sequential user ID (0001, 0002, etc.)
+            async function getNextUserId() {
+                try {
+                    // Get the highest user_id from the database
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('user_id')
+                        .order('user_id', { ascending: false })
+                        .limit(1);
+                    
+                    if (error) {
+                        throw error;
+                    }
+                    
+                    let nextId = 1;
+                    
+                    if (data && data.length > 0) {
+                        // Extract the numeric part from the highest user_id
+                        const highestId = data[0].user_id;
+                        const numericPart = parseInt(highestId);
+                        
+                        if (!isNaN(numericPart)) {
+                            nextId = numericPart + 1;
+                        }
+                    }
+                    
+                    // Format as 4-digit string with leading zeros
+                    return nextId.toString().padStart(4, '0');
+                    
+                } catch (error) {
+                    console.error('Error getting next user ID:', error);
+                    // Fallback: generate a timestamp-based ID
+                    return Date.now().toString().slice(-4);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
