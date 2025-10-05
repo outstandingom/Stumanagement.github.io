@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Student Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="tyt.css">
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header" id="profileHeader">
+        <div class="header-content">
+            <div class="user-avatar" id="userAvatar">
+                <div class="placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="header-text">
+                <h1 id="userName">Loading...</h1>
+                <p id="userRole">Loading user details</p>
+                <div class="role-badge" id="roleBadge"></div>
+                
+                <!-- Action Buttons -->
+                <div class="action-buttons" id="actionButtons">
+                    <button class="btn btn-primary" id="editProfileBtn" onclick="editProfile()">
+                        <i class="fas fa-edit"></i>
+                        Edit Profile
+                    </button>
+                    <button class="btn btn-danger" onclick="showLogoutConfirmation()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Connection Error -->
+    <div class="connection-error" id="supabaseError">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="supabaseErrorText">Connection error</span>
+    </div>
+
+    <!-- Profile Content -->
+    <main class="profile-content">
+        <!-- Personal Details Section -->
+        <section class="section" id="personalSection">
+            <h2 class="section-title" id="personalSectionTitle">
+                <i class="fas fa-user"></i>
+                Personal Details
+            </h2>
+            <div class="info-grid" id="personalDetails">
+                <!-- Skeleton loading -->
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+            </div>
+        </section>
+
+        <!-- Institute Information Section -->
+        <section class="section" id="instituteSection">
+            <h2 class="section-title" id="instituteSectionTitle">
+                <i class="fas fa-school"></i>
+                Institute Information
+            </h2>
+            <div class="info-grid" id="instituteDetails">
+                <!-- Skeleton loading -->
+                <div class="skeleton skeleton-title"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton skeleton-text"></div>
+            </div>
+        </section>
+
+        <!-- Professional Details Section (Teacher Only) -->
+        <section class="section" id="professionalSection" style="display: none;">
+            <h2 class="section-title teacher-section-title">
+                <i class="fas fa-briefcase"></i>
+                Professional Details
+            </h2>
+            <div class="info-grid" id="professionalDetails">
+                <!-- Content will be populated for teachers -->
+            </div>
+        </section>
+
+        <!-- Student Details Section (Student Only) -->
+        <section class="section" id="studentSection" style="display: none;">
+            <h2 class="section-title student-section-title">
+                <i class="fas fa-graduation-cap"></i>
+                Student Details
+            </h2>
+            <div class="info-grid" id="studentDetails">
+                <!-- Content will be populated for students -->
+            </div>
+        </section>
+
+        <!-- Parent Information Section (Student Only) -->
+        <section class="section" id="parentSection" style="display: none;">
+            <h2 class="section-title student-section-title">
+                <i class="fas fa-users"></i>
+                Parent/Guardian Information
+            </h2>
+            <div class="info-grid" id="parentDetails">
+                <!-- Content will be populated for students -->
+            </div>
+        </section>
+
+        <!-- Institute Code Section (Admin Only) -->
+        <section class="section" id="codeSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-qrcode"></i>
+                Institute Code
+            </h2>
+            <div class="institute-code" id="instituteCodeContainer">
+                <div class="code-display" id="instituteCodeDisplay">LOADING</div>
+                <p class="code-hint">Share this code with students to join your institute</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="requests.html" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i>
+            <span class="nav-label">Requests</span>
+        </a>
+        <a href="batches.html" class="nav-item">
+            <i class="fas fa-users nav-icon"></i>
+            <span class="nav-label">Batches</span>
+        </a>
+        <a href="attendance.html" class="nav-item">
+            <i class="fas fa-clipboard-check nav-icon"></i>
+            <span class="nav-label">Attendance</span>
+        </a>
+        <a href="dashboard.html" class="nav-item">
+            <i class="fas fa-tachometer-alt nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="profile.html" class="nav-item active" id="profileNavItem">
+            <i class="fas fa-user nav-icon"></i>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+
+    <!-- Logout Confirmation Modal -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <i class="fas fa-sign-out-alt" style="font-size: 48px; color: var(--error); margin-bottom: 15px;"></i>
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout from your account?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" onclick="hideLogoutConfirmation()">Cancel</button>
+                <button class="modal-btn modal-btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="tyt.js"></script>
+</body>
+</html>
