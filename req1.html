@@ -1,0 +1,1956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batches - Student Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --teacher-color: #9b59b6;
+            --teacher-dark: #8e44ad;
+            --student-color: #27ae60;
+            --student-dark: #219653;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --bottom-nav-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            padding-bottom: var(--bottom-nav-height);
+            min-height: 100vh;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header.teacher-header {
+            background: linear-gradient(135deg, var(--teacher-color) 0%, var(--teacher-dark) 100%);
+        }
+        
+        .header.student-header {
+            background: linear-gradient(135deg, var(--student-color) 0%, var(--student-dark) 100%);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: var(--shadow);
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-avatar .placeholder {
+            color: var(--primary-blue);
+            font-size: 24px;
+        }
+        
+        .teacher-avatar .placeholder {
+            color: var(--teacher-color);
+        }
+        
+        .student-avatar .placeholder {
+            color: var(--student-color);
+        }
+        
+        .header-text {
+            flex: 1;
+        }
+        
+        .header-text h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: white;
+            color: var(--primary-blue);
+        }
+
+        .teacher-btn-primary {
+            background: white;
+            color: var(--teacher-color);
+        }
+
+        .student-btn-primary {
+            background: white;
+            color: var(--student-color);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 20px 15px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .teacher-section-title {
+            color: var(--teacher-color);
+            border-bottom: 2px solid var(--teacher-color);
+        }
+
+        .student-section-title {
+            color: var(--student-color);
+            border-bottom: 2px solid var(--student-color);
+        }
+        
+        .section-title i {
+            color: var(--primary-blue);
+        }
+
+        .teacher-section-title i {
+            color: var(--teacher-color);
+        }
+
+        .student-section-title i {
+            color: var(--student-color);
+        }
+
+        /* Batch Cards */
+        .batches-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .batch-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .batch-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow);
+        }
+
+        .batch-card.pending {
+            border-left: 4px solid var(--warning);
+        }
+
+        .batch-card.active {
+            border-left: 4px solid var(--success);
+        }
+
+        .batch-card.inactive {
+            border-left: 4px solid var(--text-light);
+        }
+
+        .batch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .batch-info {
+            flex: 1;
+        }
+
+        .batch-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .batch-code {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 5px;
+            font-family: monospace;
+        }
+
+        .batch-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .batch-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .batch-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+
+        .status-active {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+
+        .status-inactive {
+            background: rgba(149, 165, 166, 0.1);
+            color: var(--text-light);
+        }
+
+        .batch-details {
+            margin-bottom: 15px;
+        }
+
+        .batch-description {
+            font-size: 14px;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .batch-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            background: var(--bg-light);
+            border-radius: 6px;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-light);
+            text-align: center;
+        }
+
+        .batch-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-join {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-join:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        .btn-edit {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+
+        .btn-view {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #e67e22;
+            transform: translateY(-1px);
+        }
+
+        /* Enrollment Cards */
+        .enrollment-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .enrollment-card.pending {
+            border-left: 4px solid var(--warning);
+        }
+
+        .enrollment-card.approved {
+            border-left: 4px solid var(--success);
+        }
+
+        .enrollment-card.rejected {
+            border-left: 4px solid var(--error);
+        }
+
+        .enrollment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .enrollment-student {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .enrollment-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .enrollment-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .enrollment-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+            justify-content: flex-end;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: var(--bottom-nav-height);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 0;
+            text-decoration: none;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-blue);
+        }
+
+        .teacher-nav-item.active {
+            color: var(--teacher-color);
+        }
+
+        .student-nav-item.active {
+            color: var(--student-color);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        /* Connection Error */
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .skeleton-text {
+            height: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .skeleton-title {
+            height: 16px;
+            width: 60%;
+            margin-bottom: 15px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-dark);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn-cancel {
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+        
+        .modal-btn-submit {
+            background: var(--primary-blue);
+            color: white;
+        }
+        
+        .modal-btn-submit:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            body {
+                max-width: 400px;
+                margin: 0 auto;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+            
+            .batches-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-avatar {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .header-text h1 {
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 15px 10px;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .batch-card {
+                padding: 15px;
+            }
+            
+            .batch-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .batch-actions {
+                justify-content: stretch;
+            }
+            
+            .action-btn {
+                flex: 1;
+                justify-content: center;
+            }
+            
+            .nav-label {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header" id="profileHeader">
+        <div class="header-content">
+            <div class="header-left">
+                <div class="user-avatar" id="userAvatar">
+                    <div class="placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                <div class="header-text">
+                    <h1 id="userName">Loading...</h1>
+                    <p id="userRole">Batches Management</p>
+                    <div class="role-badge" id="roleBadge"></div>
+                </div>
+            </div>
+            <div class="header-actions" id="headerActions" style="display: none;">
+                <button class="btn btn-primary" id="createBatchBtn">
+                    <i class="fas fa-plus"></i>
+                    Create Batch
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Connection Error -->
+    <div class="connection-error" id="supabaseError">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="supabaseErrorText">Connection error</span>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- My Batches Section (For Teachers) -->
+        <section class="section" id="myBatchesSection" style="display: none;">
+            <h2 class="section-title teacher-section-title">
+                <i class="fas fa-chalkboard-teacher"></i>
+                My Batches
+            </h2>
+            <div class="batches-grid" id="myBatchesContainer">
+                <div class="no-data" id="noMyBatches">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <h3>No Batches Created</h3>
+                    <p>You haven't created any batches yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Available Batches Section (For Students) -->
+        <section class="section" id="availableBatchesSection" style="display: none;">
+            <h2 class="section-title student-section-title">
+                <i class="fas fa-graduation-cap"></i>
+                Available Batches
+            </h2>
+            <div class="batches-grid" id="availableBatchesContainer">
+                <div class="no-data" id="noAvailableBatches">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h3>No Batches Available</h3>
+                    <p>There are no active batches available for enrollment.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- All Batches Section (For Admin) -->
+        <section class="section" id="allBatchesSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-list"></i>
+                All Batches
+            </h2>
+            <div class="batches-grid" id="allBatchesContainer">
+                <div class="no-data" id="noAllBatches">
+                    <i class="fas fa-list"></i>
+                    <h3>No Batches Found</h3>
+                    <p>There are no batches in the system.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Batch Enrollments Section (For Teachers) -->
+        <section class="section" id="enrollmentsSection" style="display: none;">
+            <h2 class="section-title teacher-section-title">
+                <i class="fas fa-users"></i>
+                Enrollment Requests
+            </h2>
+            <div id="enrollmentsContainer">
+                <div class="no-data" id="noEnrollments">
+                    <i class="fas fa-users"></i>
+                    <h3>No Enrollment Requests</h3>
+                    <p>There are no pending enrollment requests.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Enrollments Section (For Students) -->
+        <section class="section" id="myEnrollmentsSection" style="display: none;">
+            <h2 class="section-title student-section-title">
+                <i class="fas fa-bookmark"></i>
+                My Enrollments
+            </h2>
+            <div id="myEnrollmentsContainer">
+                <div class="no-data" id="noMyEnrollments">
+                    <i class="fas fa-bookmark"></i>
+                    <h3>No Enrollments</h3>
+                    <p>You haven't enrolled in any batches yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <section class="section" id="loadingSection">
+            <div class="loading-state">
+                <div class="loading"></div>
+                <p>Loading batches...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="requests.html" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i>
+            <span class="nav-label">Requests</span>
+        </a>
+        <a href="batches.html" class="nav-item active" id="batchesNavItem">
+            <i class="fas fa-users nav-icon"></i>
+            <span class="nav-label">Batches</span>
+        </a>
+        <a href="attendance.html" class="nav-item">
+            <i class="fas fa-clipboard-check nav-icon"></i>
+            <span class="nav-label">Attendance</span>
+        </a>
+        <a href="dashboard.html" class="nav-item">
+            <i class="fas fa-tachometer-alt nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="profile.html" class="nav-item" id="profileNavItem">
+            <i class="fas fa-user nav-icon"></i>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+
+    <!-- Create Batch Modal -->
+    <div class="modal" id="createBatchModal">
+        <div class="modal-content">
+            <h3 class="modal-title">Create New Batch</h3>
+            <form id="createBatchForm">
+                <div class="form-group">
+                    <label class="form-label">Batch Name</label>
+                    <input type="text" class="form-input" id="batchName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <input type="text" class="form-input" id="batchSubject" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-textarea" id="batchDescription"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Batch Price (₹)</label>
+                    <input type="number" class="form-input" id="batchPrice" min="0" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Maximum Students</label>
+                    <input type="number" class="form-input" id="maxStudents" min="1" max="100" value="30">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Schedule</label>
+                    <input type="text" class="form-input" id="batchSchedule" placeholder="e.g., Mon, Wed, Fri 4-6 PM">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-input" id="startDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">End Date</label>
+                    <input type="date" class="form-input" id="endDate">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn modal-btn-cancel" onclick="hideCreateBatchModal()">Cancel</button>
+                    <button type="submit" class="modal-btn modal-btn-submit">Create Batch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Join Batch Modal -->
+    <div class="modal" id="joinBatchModal">
+        <div class="modal-content">
+            <h3 class="modal-title">Join Batch</h3>
+            <div id="joinBatchDetails"></div>
+            <div class="modal-buttons">
+                <button type="button" class="modal-btn modal-btn-cancel" onclick="hideJoinBatchModal()">Cancel</button>
+                <button type="button" class="modal-btn modal-btn-submit" id="confirmJoinBtn">Join Batch</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client
+        let supabase;
+        try {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (error) {
+            console.error('Error initializing Supabase client:', error);
+        }
+
+        // Global variables
+        let currentUserData = null;
+        let currentInstituteData = null;
+        let userRole = null;
+        let currentBatchToJoin = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const supabaseError = document.getElementById('supabaseError');
+            const userName = document.getElementById('userName');
+            const userRoleElement = document.getElementById('userRole');
+            const userAvatar = document.getElementById('userAvatar');
+            const roleBadge = document.getElementById('roleBadge');
+            const profileHeader = document.getElementById('profileHeader');
+            const profileNavItem = document.getElementById('profileNavItem');
+            const batchesNavItem = document.getElementById('batchesNavItem');
+            const headerActions = document.getElementById('headerActions');
+            const createBatchBtn = document.getElementById('createBatchBtn');
+
+            // Initialize the page
+            initializePage();
+
+            async function initializePage() {
+                await testSupabaseConnection();
+                await loadUserData();
+            }
+
+            // Test Supabase connection
+            async function testSupabaseConnection() {
+                if (!supabase) {
+                    showSupabaseError('Connection error: Please refresh the page');
+                    return;
+                }
+                
+                try {
+                    const { data, error } = await supabase.from('users').select('count').limit(1);
+                    if (error) throw error;
+                    hideSupabaseError();
+                } catch (error) {
+                    console.error('Supabase connection test failed:', error);
+                    showSupabaseError('Failed to connect to server. Please try again later.');
+                }
+            }
+
+            function showSupabaseError(message) {
+                supabaseError.style.display = 'flex';
+                document.getElementById('supabaseErrorText').textContent = message;
+            }
+
+            function hideSupabaseError() {
+                supabaseError.style.display = 'none';
+            }
+
+            // Load user data and determine role
+            async function loadUserData() {
+                try {
+                    // Get current user
+                    const { data: { user }, error: userError } = await supabase.auth.getUser();
+                    if (userError) throw userError;
+                    
+                    if (!user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+
+                    // Get user data from users table
+                    const { data: userData, error: userDataError } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', user.id)
+                        .single();
+
+                    if (userDataError) throw userDataError;
+                    currentUserData = userData;
+                    userRole = userData.role;
+
+                    // Display user data
+                    displayUserData(userData);
+
+                    // Load batches based on role
+                    await loadBatchesBasedOnRole();
+                    
+                } catch (error) {
+                    console.error('Error loading data:', error);
+                    showSupabaseError('Error loading batches: ' + error.message);
+                }
+            }
+
+            // Display user data in header
+            function displayUserData(user) {
+                userName.textContent = user.full_name;
+                userRoleElement.textContent = 'Batches Management';
+                
+                // Set role badge
+                roleBadge.textContent = user.role.toUpperCase();
+                
+                // Apply role-specific styling
+                if (user.role === 'teacher') {
+                    profileHeader.classList.add('teacher-header');
+                    userAvatar.classList.add('teacher-avatar');
+                    profileNavItem.classList.add('teacher-nav-item');
+                    batchesNavItem.classList.add('teacher-nav-item');
+                    headerActions.style.display = 'flex';
+                    createBatchBtn.classList.remove('btn-primary');
+                    createBatchBtn.classList.add('teacher-btn-primary');
+                } else if (user.role === 'student') {
+                    profileHeader.classList.add('student-header');
+                    userAvatar.classList.add('student-avatar');
+                    profileNavItem.classList.add('student-nav-item');
+                    batchesNavItem.classList.add('student-nav-item');
+                }
+                
+                // User avatar
+                if (user.profile_photo_url) {
+                    userAvatar.innerHTML = `<img src="${user.profile_photo_url}" alt="${user.full_name}" onerror="this.style.display='none'; this.parentElement.querySelector('.placeholder').style.display='flex';" />`;
+                    const placeholder = userAvatar.querySelector('.placeholder');
+                    if (placeholder) placeholder.style.display = 'none';
+                }
+            }
+
+            // Load batches based on user role
+            async function loadBatchesBasedOnRole() {
+                hideLoadingSection();
+                
+                if (userRole === 'admin') {
+                    await loadAdminBatches();
+                } else if (userRole === 'teacher') {
+                    await loadTeacherBatches();
+                } else if (userRole === 'student') {
+                    await loadStudentBatches();
+                }
+            }
+
+            // Load batches for admin
+            async function loadAdminBatches() {
+                try {
+                    // Get admin's institute data
+                    const { data: instituteData, error: instituteError } = await supabase
+                        .from('admin_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .single();
+
+                    if (instituteError) {
+                        console.error('Error loading institute data:', instituteError);
+                        showNoInstituteMessage();
+                        return;
+                    }
+
+                    currentInstituteData = instituteData;
+
+                    // Show all batches section
+                    document.getElementById('allBatchesSection').style.display = 'block';
+
+                    // Load all batches for the institute
+                    await loadAllBatchesForInstitute(instituteData.institute_code);
+                    
+                } catch (error) {
+                    console.error('Error loading admin batches:', error);
+                    showSupabaseError('Error loading batches: ' + error.message);
+                }
+            }
+
+            // Load all batches for institute
+            async function loadAllBatchesForInstitute(instituteCode) {
+                try {
+                    const { data: batches, error } = await supabase
+                        .from('batches')
+                        .select(`
+                            *,
+                            users!inner(full_name, email),
+                            admin_institutes!inner(institute_name)
+                        `)
+                        .eq('institute_code', instituteCode)
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    displayAllBatches(batches);
+                    
+                } catch (error) {
+                    console.error('Error loading batches:', error);
+                }
+            }
+
+            // Load batches for teacher
+            async function loadTeacherBatches() {
+                try {
+                    // Get teacher's institute data
+                    const { data: teacherData, error: teacherError } = await supabase
+                        .from('teacher_institutes')
+                        .select('institute_code, status')
+                        .eq('user_id', currentUserData.user_id)
+                        .single();
+
+                    if (teacherError || !teacherData) {
+                        console.error('Teacher not associated with institute:', teacherError);
+                        showNoInstituteMessage();
+                        return;
+                    }
+
+                    if (teacherData.status !== 'confirmed') {
+                        showNotConfirmedMessage();
+                        return;
+                    }
+
+                    currentInstituteData = { institute_code: teacherData.institute_code };
+
+                    // Show teacher sections
+                    document.getElementById('myBatchesSection').style.display = 'block';
+                    document.getElementById('enrollmentsSection').style.display = 'block';
+
+                    // Load teacher's batches
+                    await loadTeacherBatchesForInstitute(teacherData.institute_code);
+                    
+                    // Load enrollment requests
+                    await loadEnrollmentRequests(teacherData.institute_code);
+                    
+                } catch (error) {
+                    console.error('Error loading teacher batches:', error);
+                    showSupabaseError('Error loading batches: ' + error.message);
+                }
+            }
+
+            // Load teacher's batches
+            async function loadTeacherBatchesForInstitute(instituteCode) {
+                try {
+                    const { data: batches, error } = await supabase
+                        .from('batches')
+                        .select(`
+                            *,
+                            batch_enrollments!left(count)
+                        `)
+                        .eq('institute_code', instituteCode)
+                        .eq('teacher_id', currentUserData.user_id)
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    // Count current students for each batch
+                    const batchesWithCounts = await Promise.all(
+                        batches.map(async (batch) => {
+                            const { count } = await supabase
+                                .from('batch_enrollments')
+                                .select('*', { count: 'exact', head: true })
+                                .eq('batch_id', batch.id)
+                                .eq('status', 'approved');
+                            
+                            return {
+                                ...batch,
+                                current_students: count || 0
+                            };
+                        })
+                    );
+
+                    displayMyBatches(batchesWithCounts);
+                    
+                } catch (error) {
+                    console.error('Error loading teacher batches:', error);
+                }
+            }
+
+            // Load enrollment requests for teacher
+            async function loadEnrollmentRequests(instituteCode) {
+                try {
+                    // Get teacher's batch IDs
+                    const { data: teacherBatches, error: batchesError } = await supabase
+                        .from('batches')
+                        .select('id')
+                        .eq('institute_code', instituteCode)
+                        .eq('teacher_id', currentUserData.user_id);
+
+                    if (batchesError) throw batchesError;
+
+                    if (!teacherBatches || teacherBatches.length === 0) {
+                        document.getElementById('noEnrollments').style.display = 'block';
+                        return;
+                    }
+
+                    const batchIds = teacherBatches.map(batch => batch.id);
+
+                    // Get pending enrollments for teacher's batches
+                    const { data: enrollments, error } = await supabase
+                        .from('batch_enrollments')
+                        .select(`
+                            *,
+                            users!inner(full_name, email),
+                            batches!inner(batch_name, batch_code)
+                        `)
+                        .in('batch_id', batchIds)
+                        .eq('status', 'pending')
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    displayEnrollmentRequests(enrollments);
+                    
+                } catch (error) {
+                    console.error('Error loading enrollment requests:', error);
+                }
+            }
+
+            // Load batches for student
+            async function loadStudentBatches() {
+                try {
+                    // Get student's institute data
+                    const { data: studentData, error: studentError } = await supabase
+                        .from('student_institutes')
+                        .select('institute_code, status')
+                        .eq('user_id', currentUserData.user_id)
+                        .single();
+
+                    if (studentError || !studentData) {
+                        console.error('Student not associated with institute:', studentError);
+                        showNoInstituteMessage();
+                        return;
+                    }
+
+                    if (studentData.status !== 'confirmed') {
+                        showNotConfirmedMessage();
+                        return;
+                    }
+
+                    currentInstituteData = { institute_code: studentData.institute_code };
+
+                    // Show student sections
+                    document.getElementById('availableBatchesSection').style.display = 'block';
+                    document.getElementById('myEnrollmentsSection').style.display = 'block';
+
+                    // Load available batches
+                    await loadAvailableBatches(studentData.institute_code);
+                    
+                    // Load student's enrollments
+                    await loadMyEnrollments();
+                    
+                } catch (error) {
+                    console.error('Error loading student batches:', error);
+                    showSupabaseError('Error loading batches: ' + error.message);
+                }
+            }
+
+            // Load available batches for student
+            async function loadAvailableBatches(instituteCode) {
+                try {
+                    const { data: batches, error } = await supabase
+                        .from('batches')
+                        .select(`
+                            *,
+                            users!inner(full_name, email),
+                            batch_enrollments!left(count)
+                        `)
+                        .eq('institute_code', instituteCode)
+                        .eq('status', 'active')
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    // Filter out batches student is already enrolled in
+                    const { data: myEnrollments } = await supabase
+                        .from('batch_enrollments')
+                        .select('batch_id')
+                        .eq('student_id', currentUserData.user_id);
+
+                    const enrolledBatchIds = myEnrollments ? myEnrollments.map(e => e.batch_id) : [];
+                    const availableBatches = batches.filter(batch => !enrolledBatchIds.includes(batch.id));
+
+                    // Count current students for each batch
+                    const batchesWithCounts = await Promise.all(
+                        availableBatches.map(async (batch) => {
+                            const { count } = await supabase
+                                .from('batch_enrollments')
+                                .select('*', { count: 'exact', head: true })
+                                .eq('batch_id', batch.id)
+                                .eq('status', 'approved');
+                            
+                            return {
+                                ...batch,
+                                current_students: count || 0
+                            };
+                        })
+                    );
+
+                    displayAvailableBatches(batchesWithCounts);
+                    
+                } catch (error) {
+                    console.error('Error loading available batches:', error);
+                }
+            }
+
+            // Load student's enrollments
+            async function loadMyEnrollments() {
+                try {
+                    const { data: enrollments, error } = await supabase
+                        .from('batch_enrollments')
+                        .select(`
+                            *,
+                            batches!inner(batch_name, batch_code, subject, users(full_name))
+                        `)
+                        .eq('student_id', currentUserData.user_id)
+                        .order('created_at', { ascending: false });
+
+                    if (error) throw error;
+
+                    displayMyEnrollments(enrollments);
+                    
+                } catch (error) {
+                    console.error('Error loading my enrollments:', error);
+                }
+            }
+
+            // Display all batches for admin
+            function displayAllBatches(batches) {
+                const container = document.getElementById('allBatchesContainer');
+                
+                if (!batches || batches.length === 0) {
+                    document.getElementById('noAllBatches').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('noAllBatches').style.display = 'none';
+                
+                container.innerHTML = batches.map(batch => `
+                    <div class="batch-card ${batch.status}" data-id="${batch.id}">
+                        <div class="batch-header">
+                            <div class="batch-info">
+                                <div class="batch-name">${batch.batch_name}</div>
+                                <div class="batch-code">Code: ${batch.batch_code}</div>
+                                <div class="batch-meta">
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-user-tie"></i>
+                                        ${batch.users.full_name}
+                                    </div>
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-book"></i>
+                                        ${batch.subject}
+                                    </div>
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-rupee-sign"></i>
+                                        ₹${batch.batch_price}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="batch-status status-${batch.status}">
+                                ${batch.status.charAt(0).toUpperCase() + batch.status.slice(1)}
+                            </div>
+                        </div>
+                        
+                        <div class="batch-details">
+                            <div class="batch-description">${batch.description || 'No description provided'}</div>
+                            <div class="batch-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${batch.current_students}</div>
+                                    <div class="stat-label">Students</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${batch.max_students}</div>
+                                    <div class="stat-label">Max</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${batch.schedule || 'Flexible'}</div>
+                                    <div class="stat-label">Schedule</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="batch-actions">
+                            ${batch.status === 'pending' ? `
+                                <button class="action-btn btn-join" onclick="approveBatch(${batch.id})">
+                                    <i class="fas fa-check"></i>
+                                    Approve
+                                </button>
+                                <button class="action-btn btn-delete" onclick="rejectBatch(${batch.id})">
+                                    <i class="fas fa-times"></i>
+                                    Reject
+                                </button>
+                            ` : ''}
+                            <button class="action-btn btn-view" onclick="viewBatchDetails(${batch.id})">
+                                <i class="fas fa-eye"></i>
+                                View
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Display teacher's batches
+            function displayMyBatches(batches) {
+                const container = document.getElementById('myBatchesContainer');
+                
+                if (!batches || batches.length === 0) {
+                    document.getElementById('noMyBatches').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('noMyBatches').style.display = 'none';
+                
+                container.innerHTML = batches.map(batch => `
+                    <div class="batch-card ${batch.status}" data-id="${batch.id}">
+                        <div class="batch-header">
+                            <div class="batch-info">
+                                <div class="batch-name">${batch.batch_name}</div>
+                                <div class="batch-code">Code: ${batch.batch_code}</div>
+                                <div class="batch-meta">
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-book"></i>
+                                        ${batch.subject}
+                                    </div>
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-rupee-sign"></i>
+                                        ₹${batch.batch_price}
+                                    </div>
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-calendar"></i>
+                                        ${batch.schedule || 'Flexible'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="batch-status status-${batch.status}">
+                                ${batch.status.charAt(0).toUpperCase() + batch.status.slice(1)}
+                            </div>
+                        </div>
+                        
+                        <div class="batch-details">
+                            <div class="batch-description">${batch.description || 'No description provided'}</div>
+                            <div class="batch-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${batch.current_students}</div>
+                                    <div class="stat-label">Students</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${batch.max_students}</div>
+                                    <div class="stat-label">Max</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${Math.round((batch.current_students / batch.max_students) * 100)}%</div>
+                                    <div class="stat-label">Capacity</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="batch-actions">
+                            ${batch.status === 'active' ? `
+                                <button class="action-btn btn-view" onclick="viewBatchStudents(${batch.id})">
+                                    <i class="fas fa-users"></i>
+                                    Students
+                                </button>
+                            ` : ''}
+                            <button class="action-btn btn-edit" onclick="editBatch(${batch.id})">
+                                <i class="fas fa-edit"></i>
+                                Edit
+                            </button>
+                            ${batch.status !== 'active' ? `
+                                <button class="action-btn btn-delete" onclick="deleteBatch(${batch.id})">
+                                    <i class="fas fa-trash"></i>
+                                    Delete
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Display available batches for students
+            function displayAvailableBatches(batches) {
+                const container = document.getElementById('availableBatchesContainer');
+                
+                if (!batches || batches.length === 0) {
+                    document.getElementById('noAvailableBatches').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('noAvailableBatches').style.display = 'none';
+                
+                container.innerHTML = batches.map(batch => `
+                    <div class="batch-card active" data-id="${batch.id}">
+                        <div class="batch-header">
+                            <div class="batch-info">
+                                <div class="batch-name">${batch.batch_name}</div>
+                                <div class="batch-code">Code: ${batch.batch_code}</div>
+                                <div class="batch-meta">
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-user-tie"></i>
+                                        ${batch.users.full_name}
+                                    </div>
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-book"></i>
+                                        ${batch.subject}
+                                    </div>
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-rupee-sign"></i>
+                                        ₹${batch.batch_price}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="batch-status status-active">Active</div>
+                        </div>
+                        
+                        <div class="batch-details">
+                            <div class="batch-description">${batch.description || 'No description provided'}</div>
+                            <div class="batch-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${batch.current_students}</div>
+                                    <div class="stat-label">Students</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${batch.max_students}</div>
+                                    <div class="stat-label">Max</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${batch.schedule || 'Flexible'}</div>
+                                    <div class="stat-label">Schedule</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="batch-actions">
+                            <button class="action-btn btn-join" onclick="showJoinBatchModal(${batch.id})">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Join Batch
+                            </button>
+                            <button class="action-btn btn-view" onclick="viewBatchDetails(${batch.id})">
+                                <i class="fas fa-eye"></i>
+                                View Details
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Display enrollment requests for teacher
+            function displayEnrollmentRequests(enrollments) {
+                const container = document.getElementById('enrollmentsContainer');
+                
+                if (!enrollments || enrollments.length === 0) {
+                    document.getElementById('noEnrollments').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('noEnrollments').style.display = 'none';
+                
+                container.innerHTML = enrollments.map(enrollment => `
+                    <div class="enrollment-card pending" data-id="${enrollment.id}">
+                        <div class="enrollment-header">
+                            <div class="enrollment-student">${enrollment.users.full_name}</div>
+                            <div class="enrollment-status status-pending">Pending</div>
+                        </div>
+                        <div class="enrollment-details">
+                            <div>Batch: ${enrollment.batches.batch_name}</div>
+                            <div>Code: ${enrollment.batches.batch_code}</div>
+                            <div>Email: ${enrollment.users.email}</div>
+                            <div>Applied: ${new Date(enrollment.created_at).toLocaleDateString()}</div>
+                        </div>
+                        <div class="enrollment-actions">
+                            <button class="action-btn btn-join" onclick="approveEnrollment(${enrollment.id})">
+                                <i class="fas fa-check"></i>
+                                Approve
+                            </button>
+                            <button class="action-btn btn-delete" onclick="rejectEnrollment(${enrollment.id})">
+                                <i class="fas fa-times"></i>
+                                Reject
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Display student's enrollments
+            function displayMyEnrollments(enrollments) {
+                const container = document.getElementById('myEnrollmentsContainer');
+                
+                if (!enrollments || enrollments.length === 0) {
+                    document.getElementById('noMyEnrollments').style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('noMyEnrollments').style.display = 'none';
+                
+                container.innerHTML = enrollments.map(enrollment => `
+                    <div class="enrollment-card ${enrollment.status}" data-id="${enrollment.id}">
+                        <div class="enrollment-header">
+                            <div class="enrollment-student">${enrollment.batches.batch_name}</div>
+                            <div class="enrollment-status status-${enrollment.status}">
+                                ${enrollment.status.charAt(0).toUpperCase() + enrollment.status.slice(1)}
+                            </div>
+                        </div>
+                        <div class="enrollment-details">
+                            <div>Teacher: ${enrollment.batches.users.full_name}</div>
+                            <div>Subject: ${enrollment.batches.subject}</div>
+                            <div>Code: ${enrollment.batches.batch_code}</div>
+                            <div>Applied: ${new Date(enrollment.created_at).toLocaleDateString()}</div>
+                        </div>
+                        ${enrollment.status === 'pending' ? `
+                            <div class="enrollment-actions">
+                                <button class="action-btn btn-delete" onclick="cancelEnrollment(${enrollment.id})">
+                                    <i class="fas fa-times"></i>
+                                    Cancel
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+
+            function hideLoadingSection() {
+                document.getElementById('loadingSection').style.display = 'none';
+            }
+
+            function showNoInstituteMessage() {
+                const mainContent = document.querySelector('.main-content');
+                mainContent.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-university"></i>
+                        <h3>No Institute Associated</h3>
+                        <p>You are not associated with any institute yet.</p>
+                    </div>
+                `;
+            }
+
+            function showNotConfirmedMessage() {
+                const mainContent = document.querySelector('.main-content');
+                mainContent.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-clock"></i>
+                        <h3>Pending Approval</h3>
+                        <p>Your account is pending approval from the institute admin.</p>
+                    </div>
+                `;
+            }
+
+            // Create batch form handler
+            document.getElementById('createBatchForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await createBatch();
+            });
+        });
+
+        // Show create batch modal
+        function showCreateBatchModal() {
+            document.getElementById('createBatchModal').style.display = 'flex';
+        }
+
+        // Hide create batch modal
+        function hideCreateBatchModal() {
+            document.getElementById('createBatchModal').style.display = 'none';
+            document.getElementById('createBatchForm').reset();
+        }
+
+        // Create new batch
+        async function createBatch() {
+            try {
+                const batchData = {
+                    batch_name: document.getElementById('batchName').value,
+                    subject: document.getElementById('batchSubject').value,
+                    description: document.getElementById('batchDescription').value,
+                    batch_price: parseFloat(document.getElementById('batchPrice').value) || 0,
+                    max_students: parseInt(document.getElementById('maxStudents').value) || 30,
+                    schedule: document.getElementById('batchSchedule').value,
+                    start_date: document.getElementById('startDate').value || null,
+                    end_date: document.getElementById('endDate').value || null,
+                    institute_code: currentInstituteData.institute_code,
+                    teacher_id: currentUserData.user_id,
+                    batch_code: generateBatchCode(),
+                    status: 'pending'
+                };
+
+                const { data, error } = await supabase
+                    .from('batches')
+                    .insert([batchData])
+                    .select();
+
+                if (error) throw error;
+
+                alert('Batch created successfully! Waiting for admin approval.');
+                hideCreateBatchModal();
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('Error creating batch:', error);
+                alert('Error creating batch: ' + error.message);
+            }
+        }
+
+        // Generate unique batch code
+        function generateBatchCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return 'BATCH-' + result;
+        }
+
+        // Show join batch modal
+        async function showJoinBatchModal(batchId) {
+            try {
+                const { data: batch, error } = await supabase
+                    .from('batches')
+                    .select('*')
+                    .eq('id', batchId)
+                    .single();
+
+                if (error) throw error;
+
+                currentBatchToJoin = batch;
+
+                document.getElementById('joinBatchDetails').innerHTML = `
+                    <div class="batch-details">
+                        <div class="batch-name">${batch.batch_name}</div>
+                        <div class="batch-code">Code: ${batch.batch_code}</div>
+                        <div class="batch-description">${batch.description || 'No description provided'}</div>
+                        <div class="batch-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">₹${batch.batch_price}</div>
+                                <div class="stat-label">Price</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${batch.schedule || 'Flexible'}</div>
+                                <div class="stat-label">Schedule</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('joinBatchModal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error loading batch details:', error);
+                alert('Error loading batch details: ' + error.message);
+            }
+        }
+
+        // Hide join batch modal
+        function hideJoinBatchModal() {
+            document.getElementById('joinBatchModal').style.display = 'none';
+            currentBatchToJoin = null;
+        }
+
+        // Join batch
+        async function joinBatch() {
+            if (!currentBatchToJoin) return;
+
+            try {
+                const enrollmentData = {
+                    batch_id: currentBatchToJoin.id,
+                    student_id: currentUserData.user_id,
+                    institute_code: currentInstituteData.institute_code,
+                    status: 'pending',
+                    payment_status: 'pending'
+                };
+
+                const { data, error } = await supabase
+                    .from('batch_enrollments')
+                    .insert([enrollmentData])
+                    .select();
+
+                if (error) throw error;
+
+                alert('Enrollment request submitted successfully! Waiting for teacher approval.');
+                hideJoinBatchModal();
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('Error joining batch:', error);
+                alert('Error joining batch: ' + error.message);
+            }
+        }
+
+        // Approve enrollment
+        async function approveEnrollment(enrollmentId) {
+            try {
+                const { error } = await supabase
+                    .from('batch_enrollments')
+                    .update({ 
+                        status: 'approved',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', enrollmentId);
+
+                if (error) throw error;
+
+                alert('Enrollment approved successfully!');
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('Error approving enrollment:', error);
+                alert('Error approving enrollment: ' + error.message);
+            }
+        }
+
+        // Reject enrollment
+        async function rejectEnrollment(enrollmentId) {
+            try {
+                const { error } = await supabase
+                    .from('batch_enrollments')
+                    .update({ 
+                        status: 'rejected',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', enrollmentId);
+
+                if (error) throw error;
+
+                alert('Enrollment rejected successfully!');
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('Error rejecting enrollment:', error);
+                alert('Error rejecting enrollment: ' + error.message);
+            }
+        }
+
+        // Approve batch (admin)
+        async function approveBatch(batchId) {
+            try {
+                const { error } = await supabase
+                    .from('batches')
+                    .update({ 
+                        status: 'active',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', batchId);
+
+                if (error) throw error;
+
+                alert('Batch approved successfully!');
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('Error approving batch:', error);
+                alert('Error approving batch: ' + error.message);
+            }
+        }
+
+        // Reject batch (admin)
+        async function rejectBatch(batchId) {
+            try {
+                const { error } = await supabase
+                    .from('batches')
+                    .update({ 
+                        status: 'rejected',
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', batchId);
+
+                if (error) throw error;
+
+                alert('Batch rejected successfully!');
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('Error rejecting batch:', error);
+                alert('Error rejecting batch: ' + error.message);
+            }
+        }
+
+        // Cancel enrollment (student)
+        async function cancelEnrollment(enrollmentId) {
+            try {
+                const { error } = await supabase
+                    .from('batch_enrollments')
+                    .delete()
+                    .eq('id', enrollmentId);
+
+                if (error) throw error;
+
+                alert('Enrollment cancelled successfully!');
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('Error cancelling enrollment:', error);
+                alert('Error cancelling enrollment: ' + error.message);
+            }
+        }
+
+        // Placeholder functions for future implementation
+        function viewBatchDetails(batchId) {
+            alert('View batch details functionality to be implemented');
+        }
+
+        function viewBatchStudents(batchId) {
+            alert('View batch students functionality to be implemented');
+        }
+
+        function editBatch(batchId) {
+            alert('Edit batch functionality to be implemented');
+        }
+
+        function deleteBatch(batchId) {
+            if (confirm('Are you sure you want to delete this batch?')) {
+                alert('Delete batch functionality to be implemented');
+            }
+        }
+
+        // Set up join batch button
+        document.getElementById('confirmJoinBtn').addEventListener('click', joinBatch);
+
+        // Set up create batch button
+        document.getElementById('createBatchBtn').addEventListener('click', showCreateBatchModal);
+
+        // Close modals when clicking outside
+        window.addEventListener('click', function(event) {
+            const modals = ['createBatchModal', 'joinBatchModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    if (modalId === 'createBatchModal') hideCreateBatchModal();
+                    if (modalId === 'joinBatchModal') hideJoinBatchModal();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
