@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System - Requests</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            color: var(--text-light);
+            font-size: 16px;
+        }
+        
+        .user-info {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .user-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .user-detail {
+            padding: 15px;
+            background: var(--bg-light);
+            border-radius: 8px;
+        }
+        
+        .user-detail label {
+            font-weight: 600;
+            color: var(--text-dark);
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .user-detail span {
+            color: var(--text-light);
+            font-size: 16px;
+        }
+        
+        .requests-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 25px;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-light);
+        }
+        
+        .filters {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .filter-group label {
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        .filter-group select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+        }
+        
+        .requests-grid {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .request-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        
+        .request-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow);
+        }
+        
+        .request-card.pending {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .request-card.approved {
+            border-left: 4px solid var(--success);
+        }
+        
+        .request-card.rejected {
+            border-left: 4px solid var(--error);
+        }
+        
+        .request-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .request-type {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .request-type.student {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--primary-dark);
+        }
+        
+        .request-type.teacher {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+        
+        .request-type.batch {
+            background: rgba(155, 89, 182, 0.1);
+            color: #9b59b6;
+        }
+        
+        .request-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-pending {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+        
+        .status-approved {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+        
+        .status-rejected {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+        }
+        
+        .request-user {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+        
+        .request-institute {
+            color: var(--text-light);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .request-details {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            min-width: 150px;
+        }
+        
+        .detail-value {
+            color: var(--text-light);
+            flex: 1;
+        }
+        
+        .request-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-approve {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-approve:hover {
+            background: #27ae60;
+        }
+        
+        .btn-reject {
+            background: var(--error);
+            color: white;
+        }
+        
+        .btn-reject:hover {
+            background: #c0392b;
+        }
+        
+        .btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 15px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+        }
+        
+        .tab.active {
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
+        }
+        
+        .tab:hover {
+            color: var(--primary-dark);
+        }
+        
+        @media (max-width: 768px) {
+            .filters {
+                flex-direction: column;
+            }
+            
+            .request-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .request-actions {
+                justify-content: stretch;
+            }
+            
+            .request-actions .btn {
+                flex: 1;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .detail-label {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Student Management System</h1>
+            <p>Manage Requests & Applications</p>
+        </div>
+        
+        <div class="connection-error" id="supabaseError">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span id="supabaseErrorText">Connection error: Please refresh the page</span>
+        </div>
+        
+        <div class="user-info" id="userInfoSection" style="display: none;">
+            <h3 style="margin-bottom: 15px; color: var(--text-dark);">Your Account</h3>
+            <div class="user-details">
+                <div class="user-detail">
+                    <label>Full Name</label>
+                    <span id="currentUserName"></span>
+                </div>
+                <div class="user-detail">
+                    <label>Role</label>
+                    <span id="currentUserRole"></span>
+                </div>
+                <div class="user-detail">
+                    <label>Institute</label>
+                    <span id="currentUserInstitute"></span>
+                </div>
+                <div class="user-detail">
+                    <label>Total Requests</label>
+                    <span id="totalRequests">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="requests-container">
+            <div class="tabs" id="tabsContainer">
+                <!-- Tabs will be dynamically generated based on user role -->
+            </div>
+            
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="statusFilter">Status:</label>
+                    <select id="statusFilter">
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="typeFilter">Type:</label>
+                    <select id="typeFilter">
+                        <option value="all">All Types</option>
+                        <option value="student_join">Student Join</option>
+                        <option value="teacher_join">Teacher Join</option>
+                        <option value="batch_enrollment">Batch Enrollment</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="requestsList">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading requests...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser = null;
+            let currentUserData = null;
+            let currentUserRole = null;
+            let currentInstitute = null;
+            let allRequests = [];
+            let filteredRequests = [];
+            let activeTab = 'all';
+
+            // Initialize the page
+            initializePage();
+
+            async function initializePage() {
+                await getCurrentUser();
+                await loadCurrentUserData();
+                await determineUserRoleAndInstitute();
+                displayUserInfo();
+                setupTabs();
+                await loadRequests();
+                setupEventListeners();
+            }
+
+            async function getCurrentUser() {
+                try {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error) throw error;
+                    currentUser = user;
+                    
+                    if (!currentUser) {
+                        alert('Please login to view requests');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error getting current user:', error);
+                    alert('Please login to continue');
+                    window.location.href = 'login.html';
+                }
+            }
+
+            async function loadCurrentUserData() {
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', currentUser.id)
+                        .single();
+                    
+                    if (error) throw error;
+                    currentUserData = data;
+                    
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                }
+            }
+
+            async function determineUserRoleAndInstitute() {
+                if (!currentUserData) return;
+                
+                currentUserRole = currentUserData.role;
+                
+                // Determine institute based on role
+                if (currentUserRole === 'admin') {
+                    const { data } = await supabase
+                        .from('admin_institutes')
+                        .select('institute_name')
+                        .eq('user_id', currentUserData.user_id)
+                        .single();
+                    currentInstitute = data?.institute_name || 'Admin Institute';
+                } else if (currentUserRole === 'teacher') {
+                    const { data } = await supabase
+                        .from('teacher_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data?.institute_code || 'No Institute';
+                } else if (currentUserRole === 'student') {
+                    const { data } = await supabase
+                        .from('student_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data?.institute_code || 'No Institute';
+                }
+            }
+
+            function displayUserInfo() {
+                if (currentUserData) {
+                    document.getElementById('currentUserName').textContent = currentUserData.full_name;
+                    document.getElementById('currentUserRole').textContent = currentUserRole;
+                    document.getElementById('currentUserInstitute').textContent = currentInstitute;
+                    document.getElementById('userInfoSection').style.display = 'block';
+                }
+            }
+
+            function setupTabs() {
+                const tabsContainer = document.getElementById('tabsContainer');
+                let tabs = [];
+                
+                if (currentUserRole === 'admin') {
+                    tabs = [
+                        { id: 'all', label: 'All Requests' },
+                        { id: 'student_join', label: 'Student Applications' },
+                        { id: 'teacher_join', label: 'Teacher Applications' },
+                        { id: 'batch_enrollment', label: 'Batch Enrollments' }
+                    ];
+                } else if (currentUserRole === 'teacher') {
+                    tabs = [
+                        { id: 'all', label: 'All Requests' },
+                        { id: 'student_join', label: 'Student Applications' },
+                        { id: 'batch_enrollment', label: 'Batch Enrollments' },
+                        { id: 'my_requests', label: 'My Requests' }
+                    ];
+                } else if (currentUserRole === 'student') {
+                    tabs = [
+                        { id: 'my_requests', label: 'My Requests' }
+                    ];
+                }
+                
+                tabsContainer.innerHTML = tabs.map(tab => `
+                    <button class="tab ${tab.id === activeTab ? 'active' : ''}" data-tab="${tab.id}">
+                        ${tab.label}
+                    </button>
+                `).join('');
+                
+                // Add tab click event listeners
+                tabsContainer.querySelectorAll('.tab').forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        activeTab = this.getAttribute('data-tab');
+                        // Update active tab
+                        tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                        filterRequests();
+                    });
+                });
+            }
+
+            async function loadRequests() {
+                try {
+                    let query = supabase
+                        .from('requests')
+                        .select(`
+                            *,
+                            users:user_id(full_name, email, phone),
+                            institutes:institute_code(institute_name, institute_type)
+                        `)
+                        .order('created_at', { ascending: false });
+                    
+                    // Apply role-based filtering
+                    if (currentUserRole === 'student') {
+                        // Students can only see their own requests
+                        query = query.eq('user_id', currentUserData.user_id);
+                    } else if (currentUserRole === 'teacher') {
+                        // Teachers can see requests for their institute and their own requests
+                        const { data: teacherData } = await supabase
+                            .from('teacher_institutes')
+                            .select('institute_code')
+                            .eq('user_id', currentUserData.user_id)
+                            .eq('status', 'confirmed')
+                            .single();
+                        
+                        if (teacherData) {
+                            query = query.or(`institute_code.eq.${teacherData.institute_code},user_id.eq.${currentUserData.user_id}`);
+                        } else {
+                            query = query.eq('user_id', currentUserData.user_id);
+                        }
+                    } else if (currentUserRole === 'admin') {
+                        // Admins can see all requests for their institute
+                        const { data: adminData } = await supabase
+                            .from('admin_institutes')
+                            .select('institute_code')
+                            .eq('user_id', currentUserData.user_id)
+                            .single();
+                        
+                        if (adminData) {
+                            query = query.eq('institute_code', adminData.institute_code);
+                        }
+                    }
+                    
+                    const { data, error } = await query;
+                    
+                    if (error) throw error;
+                    
+                    allRequests = data || [];
+                    document.getElementById('totalRequests').textContent = allRequests.length;
+                    filterRequests();
+                    
+                } catch (error) {
+                    console.error('Error loading requests:', error);
+                    showError('Error loading requests: ' + error.message);
+                }
+            }
+
+            function filterRequests() {
+                const statusFilter = document.getElementById('statusFilter').value;
+                const typeFilter = document.getElementById('typeFilter').value;
+                
+                filteredRequests = allRequests.filter(request => {
+                    // Tab filtering
+                    if (activeTab !== 'all' && activeTab !== 'my_requests') {
+                        if (request.request_type !== activeTab) return false;
+                    }
+                    
+                    if (activeTab === 'my_requests') {
+                        if (request.user_id !== currentUserData.user_id) return false;
+                    }
+                    
+                    // Status filtering
+                    if (statusFilter !== 'all' && request.status !== statusFilter) {
+                        return false;
+                    }
+                    
+                    // Type filtering
+                    if (typeFilter !== 'all' && request.request_type !== typeFilter) {
+                        return false;
+                    }
+                    
+                    return true;
+                });
+                
+                displayRequests();
+            }
+
+            function displayRequests() {
+                const requestsList = document.getElementById('requestsList');
+                
+                if (filteredRequests.length === 0) {
+                    requestsList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <h3>No requests found</h3>
+                            <p>There are no requests matching your current filters.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                requestsList.innerHTML = filteredRequests.map(request => `
+                    <div class="request-card ${request.status}">
+                        <div class="request-header">
+                            <div style="flex: 1;">
+                                <span class="request-type ${getRequestTypeClass(request.request_type)}">
+                                    ${getRequestTypeLabel(request.request_type)}
+                                </span>
+                                <span class="request-status status-${request.status}">
+                                    ${request.status.toUpperCase()}
+                                </span>
+                                <div class="request-user">
+                                    ${request.users?.full_name || 'Unknown User'}
+                                </div>
+                                <div class="request-institute">
+                                    Institute: ${request.institutes?.institute_name || request.institute_code}
+                                </div>
+                            </div>
+                            <div style="color: var(--text-light); font-size: 14px;">
+                                ${formatDate(request.created_at)}
+                            </div>
+                        </div>
+                        
+                        <div class="request-details">
+                            ${renderRequestDetails(request)}
+                        </div>
+                        
+                        ${renderRequestActions(request)}
+                    </div>
+                `).join('');
+                
+                // Add event listeners to action buttons
+                requestsList.querySelectorAll('.btn-approve').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const requestId = this.getAttribute('data-request-id');
+                        updateRequestStatus(requestId, 'approved');
+                    });
+                });
+                
+                requestsList.querySelectorAll('.btn-reject').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const requestId = this.getAttribute('data-request-id');
+                        updateRequestStatus(requestId, 'rejected');
+                    });
+                });
+            }
+
+            function renderRequestDetails(request) {
+                const requestData = request.request_data || {};
+                
+                switch (request.request_type) {
+                    case 'student_join':
+                        return `
+                            <div class="detail-row">
+                                <span class="detail-label">Class:</span>
+                                <span class="detail-value">${requestData.currentClass || 'N/A'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Roll Number:</span>
+                                <span class="detail-value">${requestData.rollNumber || 'N/A'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Subjects:</span>
+                                <span class="detail-value">${requestData.subjects || 'N/A'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Father's Name:</span>
+                                <span class="detail-value">${requestData.fatherName || 'N/A'}</span>
+                            </div>
+                        `;
+                    
+                    case 'teacher_join':
+                        return `
+                            <div class="detail-row">
+                                <span class="detail-label">Qualification:</span>
+                                <span class="detail-value">${requestData.qualification || 'N/A'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Specialization:</span>
+                                <span class="detail-value">${requestData.specialization || 'N/A'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Experience:</span>
+                                <span class="detail-value">${requestData.experience || 0} years</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Subjects:</span>
+                                <span class="detail-value">${requestData.subjects || 'N/A'}</span>
+                            </div>
+                        `;
+                    
+                    case 'batch_enrollment':
+                        return `
+                            <div class="detail-row">
+                                <span class="detail-label">Batch ID:</span>
+                                <span class="detail-value">${request.target_id || 'N/A'}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Enrollment Type:</span>
+                                <span class="detail-value">Batch Enrollment</span>
+                            </div>
+                        `;
+                    
+                    default:
+                        return '<div class="detail-row">No additional details available</div>';
+                }
+            }
+
+            function renderRequestActions(request) {
+                // Students can only view their own requests, no actions
+                if (currentUserRole === 'student') {
+                    return '';
+                }
+                
+                // Teachers can only act on student join and batch enrollment requests for their institute
+                if (currentUserRole === 'teacher') {
+                    if (request.user_id === currentUserData.user_id) {
+                        return ''; // Can't act on own requests
+                    }
+                    if (request.request_type === 'teacher_join') {
+                        return ''; // Teachers can't approve other teachers
+                    }
+                }
+                
+                // Only show actions for pending requests
+                if (request.status !== 'pending') {
+                    return '<div class="request-actions"><em>Request processed</em></div>';
+                }
+                
+                return `
+                    <div class="request-actions">
+                        <button class="btn btn-approve" data-request-id="${request.id}">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn btn-reject" data-request-id="${request.id}">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                `;
+            }
+
+            async function updateRequestStatus(requestId, newStatus) {
+                try {
+                    // Find the request
+                    const request = allRequests.find(r => r.id == requestId);
+                    if (!request) throw new Error('Request not found');
+                    
+                    // Update request status
+                    const { error } = await supabase
+                        .from('requests')
+                        .update({
+                            status: newStatus,
+                            reviewed_by: currentUserData.user_id,
+                            reviewed_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', requestId);
+                    
+                    if (error) throw error;
+                    
+                    // If approved, create the actual record
+                    if (newStatus === 'approved') {
+                        await processApprovedRequest(request);
+                    }
+                    
+                    // Reload requests to reflect changes
+                    await loadRequests();
+                    
+                    alert(`Request ${newStatus} successfully!`);
+                    
+                } catch (error) {
+                    console.error('Error updating request status:', error);
+                    alert('Error updating request: ' + error.message);
+                }
+            }
+
+            async function processApprovedRequest(request) {
+                try {
+                    const requestData = request.request_data || {};
+                    
+                    if (request.request_type === 'student_join') {
+                        // Create student_institutes record
+                        const { error } = await supabase
+                            .from('student_institutes')
+                            .insert([
+                                {
+                                    user_id: request.user_id,
+                                    institute_code: request.institute_code,
+                                    profile_photo_url: requestData.profilePhoto || null,
+                                    date_of_birth: requestData.dateOfBirth,
+                                    gender: requestData.gender,
+                                    current_class: requestData.currentClass,
+                                    roll_number: requestData.rollNumber,
+                                    section: requestData.section,
+                                    academic_year: requestData.academicYear,
+                                    subjects: requestData.subjects,
+                                    father_name: requestData.fatherName,
+                                    mother_name: requestData.motherName,
+                                    father_phone: requestData.fatherPhone,
+                                    mother_phone: requestData.motherPhone || null,
+                                    guardian_name: requestData.guardianName || null,
+                                    guardian_phone: requestData.guardianPhone || null,
+                                    parent_email: requestData.parentEmail || null,
+                                    address: requestData.address,
+                                    city: requestData.city,
+                                    state: requestData.state,
+                                    pincode: requestData.pincode,
+                                    country: requestData.country,
+                                    previous_school: requestData.previousSchool || null,
+                                    medical_info: requestData.medicalInfo || null,
+                                    emergency_contact: requestData.emergencyContact,
+                                    status: 'confirmed',
+                                    admission_date: new Date().toISOString()
+                                }
+                            ]);
+                        
+                        if (error) throw error;
+                        
+                        // Update user role to student
+                        await supabase
+                            .from('users')
+                            .update({ role: 'student' })
+                            .eq('user_id', request.user_id);
+                        
+                    } else if (request.request_type === 'teacher_join') {
+                        // Create teacher_institutes record
+                        const { error } = await supabase
+                            .from('teacher_institutes')
+                            .insert([
+                                {
+                                    user_id: request.user_id,
+                                    institute_code: request.institute_code,
+                                    profile_photo_url: requestData.profilePhoto || null,
+                                    qualification: requestData.qualification,
+                                    specialization: requestData.specialization,
+                                    experience_years: requestData.experience,
+                                    subjects_taught: requestData.subjects,
+                                    bio: requestData.bio,
+                                    date_of_birth: requestData.dateOfBirth,
+                                    gender: requestData.gender,
+                                    resume_url: requestData.resumeUrl || null,
+                                    available_hours: requestData.availableHours || null,
+                                    address: requestData.address || null,
+                                    emergency_contact: requestData.emergencyContact || null,
+                                    status: 'confirmed',
+                                    joining_date: new Date().toISOString(),
+                                    can_create_batches: true
+                                }
+                            ]);
+                        
+                        if (error) throw error;
+                        
+                        // Update user role to teacher
+                        await supabase
+                            .from('users')
+                            .update({ role: 'teacher' })
+                            .eq('user_id', request.user_id);
+                    }
+                    // Note: batch_enrollment processing would require additional logic
+                    
+                } catch (error) {
+                    console.error('Error processing approved request:', error);
+                    throw new Error('Failed to create user record: ' + error.message);
+                }
+            }
+
+            function setupEventListeners() {
+                document.getElementById('statusFilter').addEventListener('change', filterRequests);
+                document.getElementById('typeFilter').addEventListener('change', filterRequests);
+            }
+
+            function getRequestTypeClass(requestType) {
+                const typeMap = {
+                    'student_join': 'student',
+                    'teacher_join': 'teacher',
+                    'batch_enrollment': 'batch'
+                };
+                return typeMap[requestType] || 'student';
+            }
+
+            function getRequestTypeLabel(requestType) {
+                const labelMap = {
+                    'student_join': 'Student Application',
+                    'teacher_join': 'Teacher Application',
+                    'batch_enrollment': 'Batch Enrollment'
+                };
+                return labelMap[requestType] || 'Request';
+            }
+
+            function formatDate(dateString) {
+                return new Date(dateString).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            function showError(message) {
+                const errorElement = document.getElementById('supabaseError');
+                const errorText = document.getElementById('supabaseErrorText');
+                errorText.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
