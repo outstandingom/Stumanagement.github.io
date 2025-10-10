@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requests - Student Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --teacher-color: #9b59b6;
+            --teacher-dark: #8e44ad;
+            --student-color: #27ae60;
+            --student-dark: #219653;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --bottom-nav-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            padding-bottom: var(--bottom-nav-height);
+            min-height: 100vh;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header.teacher-header {
+            background: linear-gradient(135deg, var(--teacher-color) 0%, var(--teacher-dark) 100%);
+        }
+        
+        .header.student-header {
+            background: linear-gradient(135deg, var(--student-color) 0%, var(--student-dark) 100%);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: var(--shadow);
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-avatar .placeholder {
+            color: var(--primary-blue);
+            font-size: 24px;
+        }
+        
+        .teacher-avatar .placeholder {
+            color: var(--teacher-color);
+        }
+        
+        .student-avatar .placeholder {
+            color: var(--student-color);
+        }
+        
+        .header-text {
+            flex: 1;
+        }
+        
+        .header-text h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* Profile Content */
+        .profile-content {
+            padding: 20px 15px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .teacher-section-title {
+            color: var(--teacher-color);
+            border-bottom: 2px solid var(--teacher-color);
+        }
+
+        .student-section-title {
+            color: var(--student-color);
+            border-bottom: 2px solid var(--student-color);
+        }
+        
+        .section-title i {
+            color: var(--primary-blue);
+        }
+
+        .teacher-section-title i {
+            color: var(--teacher-color);
+        }
+
+        .student-section-title i {
+            color: var(--student-color);
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: var(--bottom-nav-height);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 0;
+            text-decoration: none;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-blue);
+        }
+
+        .teacher-nav-item.active {
+            color: var(--teacher-color);
+        }
+
+        .student-nav-item.active {
+            color: var(--student-color);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .skeleton-text {
+            height: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .skeleton-title {
+            height: 16px;
+            width: 60%;
+            margin-bottom: 15px;
+        }
+        
+        /* Connection Error */
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* No Data State */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Logout Confirmation Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 300px;
+            width: 90%;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn-cancel {
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+        
+        .modal-btn-logout {
+            background: var(--error);
+            color: white;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        
+        .status-pending {
+            background-color: rgba(243, 156, 18, 0.2);
+            color: var(--warning);
+        }
+        
+        .status-confirmed {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: var(--success);
+        }
+
+        /* Requests Page Styles */
+        .requests-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .request-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .request-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow);
+        }
+
+        .request-card.pending {
+            border-left: 4px solid var(--warning);
+        }
+
+        .request-card.approved {
+            border-left: 4px solid var(--success);
+        }
+
+        .request-card.rejected {
+            border-left: 4px solid var(--error);
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+
+        .request-user-info {
+            flex: 1;
+        }
+
+        .request-user-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+
+        .request-user-email {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .request-meta {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .request-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .request-type-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .type-student {
+            background: rgba(39, 174, 96, 0.1);
+            color: var(--student-color);
+        }
+
+        .type-teacher {
+            background: rgba(155, 89, 182, 0.1);
+            color: var(--teacher-color);
+        }
+
+        .request-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+
+        .status-approved {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+
+        .status-rejected {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+        }
+
+        .request-details {
+            margin-bottom: 15px;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            font-size: 13px;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-approve {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        .btn-reject {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-reject:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+
+        .btn-view {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .loading-state .loading {
+            margin: 0 auto 15px;
+        }
+
+        .request-date {
+            font-size: 11px;
+            color: var(--text-light);
+            text-align: right;
+        }
+
+        .no-actions-message {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        .modal-btn-approve {
+            background: var(--success);
+            color: white;
+        }
+
+        .modal-btn-approve:hover {
+            background: #27ae60;
+        }
+
+        .modal-btn-reject {
+            background: var(--error);
+            color: white;
+        }
+
+        .modal-btn-reject:hover {
+            background: #c0392b;
+        }
+
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            body {
+                max-width: 400px;
+                margin: 0 auto;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .user-avatar {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .header-text h1 {
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .request-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .request-actions {
+                justify-content: stretch;
+            }
+            
+            .action-btn {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .profile-content {
+                padding: 15px 10px;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .request-card {
+                padding: 15px;
+            }
+            
+            .request-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .request-actions {
+                flex-direction: column;
+            }
+            
+            .nav-label {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header" id="profileHeader">
+        <div class="header-content">
+            <div class="user-avatar" id="userAvatar">
+                <div class="placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="header-text">
+                <h1 id="userName">Loading...</h1>
+                <p id="userRole">Requests Management</p>
+                <div class="role-badge" id="roleBadge"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Connection Error -->
+    <div class="connection-error" id="supabaseError">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="supabaseErrorText">Connection error</span>
+    </div>
+
+    <!-- Main Content -->
+    <main class="profile-content">
+        <!-- Student Requests Section (For Teachers & Admin) -->
+        <section class="section" id="studentRequestsSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-user-graduate"></i>
+                Student Join Requests
+            </h2>
+            <div class="requests-container" id="studentRequestsContainer">
+                <div class="no-data" id="noStudentRequests">
+                    <i class="fas fa-user-graduate"></i>
+                    <h3>No Student Requests</h3>
+                    <p>There are no pending student join requests at the moment.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Teacher Requests Section (For Admin Only) -->
+        <section class="section" id="teacherRequestsSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-chalkboard-teacher"></i>
+                Teacher Join Requests
+            </h2>
+            <div class="requests-container" id="teacherRequestsContainer">
+                <div class="no-data" id="noTeacherRequests">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <h3>No Teacher Requests</h3>
+                    <p>There are no pending teacher join requests at the moment.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- My Requests Section (For Students & Teachers) -->
+        <section class="section" id="myRequestsSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-clock"></i>
+                My Requests
+            </h2>
+            <div class="requests-container" id="myRequestsContainer">
+                <div class="no-data" id="noMyRequests">
+                    <i class="fas fa-clock"></i>
+                    <h3>No Requests Found</h3>
+                    <p>You don't have any requests at the moment.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <section class="section" id="loadingSection">
+            <div class="loading-state">
+                <div class="loading"></div>
+                <p>Loading requests...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="request.html" class="nav-item active">
+            <i class="fas fa-bell nav-icon"></i>
+            <span class="nav-label">Requests</span>
+        </a>
+        <a href="batches.html" class="nav-item">
+            <i class="fas fa-users nav-icon"></i>
+            <span class="nav-label">Batches</span>
+        </a>
+        <a href="attendance.html" class="nav-item">
+            <i class="fas fa-clipboard-check nav-icon"></i>
+            <span class="nav-label">Attendance</span>
+        </a>
+        <a href="dashboard.html" class="nav-item">
+            <i class="fas fa-tachometer-alt nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="index.html" class="nav-item" id="profileNavItem">
+            <i class="fas fa-user nav-icon"></i>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+
+    <!-- Action Confirmation Modal -->
+    <div class="modal" id="actionModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Confirm Action</h3>
+            <p id="modalMessage">Are you sure you want to perform this action?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-cancel" id="modalCancel">Cancel</button>
+                <button class="modal-btn" id="modalConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser = null;
+            let currentUserData = null;
+            let currentUserRole = null;
+            let currentInstitute = null;
+            let allRequests = [];
+            let pendingAction = null;
+
+            // Initialize the page
+            initializePage();
+
+            async function initializePage() {
+                await getCurrentUser();
+                await loadCurrentUserData();
+                await determineUserRoleAndInstitute();
+                setupHeader();
+                await loadRequests();
+                setupEventListeners();
+            }
+
+            async function getCurrentUser() {
+                try {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error) throw error;
+                    currentUser = user;
+                    
+                    if (!currentUser) {
+                        alert('Please login to view requests');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error getting current user:', error);
+                    alert('Please login to continue');
+                    window.location.href = 'login.html';
+                }
+            }
+
+            async function loadCurrentUserData() {
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', currentUser.id)
+                        .single();
+                    
+                    if (error) throw error;
+                    currentUserData = data;
+                    
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                }
+            }
+
+            async function determineUserRoleAndInstitute() {
+                if (!currentUserData) return;
+                
+                currentUserRole = currentUserData.role;
+                
+                // Determine institute based on role
+                if (currentUserRole === 'admin') {
+                    const { data } = await supabase
+                        .from('admin_institutes')
+                        .select('institute_name, institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .single();
+                    currentInstitute = data;
+                } else if (currentUserRole === 'teacher') {
+                    const { data } = await supabase
+                        .from('teacher_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data;
+                } else if (currentUserRole === 'student') {
+                    const { data } = await supabase
+                        .from('student_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data;
+                }
+            }
+
+            function setupHeader() {
+                if (currentUserData) {
+                    document.getElementById('userName').textContent = currentUserData.full_name;
+                    document.getElementById('userRole').textContent = `${currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1)} Dashboard`;
+                    document.getElementById('roleBadge').textContent = currentUserRole.toUpperCase();
+                    
+                    // Set header color based on role
+                    const header = document.getElementById('profileHeader');
+                    if (currentUserRole === 'teacher') {
+                        header.classList.add('teacher-header');
+                        document.getElementById('userAvatar').classList.add('teacher-avatar');
+                    } else if (currentUserRole === 'student') {
+                        header.classList.add('student-header');
+                        document.getElementById('userAvatar').classList.add('student-avatar');
+                    }
+                }
+            }
+
+            async function loadRequests() {
+                try {
+                    let query = supabase
+                        .from('requests')
+                        .select(`
+                            *,
+                            users!inner(full_name, email, phone),
+                            admin_institutes!inner(institute_name)
+                        `)
+                        .order('created_at', { ascending: false });
+                    
+                    // Apply role-based filtering
+                    if (currentUserRole === 'student') {
+                        // Students can only see their own requests
+                        query = query.eq('user_id', currentUserData.user_id);
+                    } else if (currentUserRole === 'teacher') {
+                        // Teachers can see requests for their institute and their own requests
+                        if (currentInstitute) {
+                            query = query.or(`institute_code.eq.${currentInstitute.institute_code},user_id.eq.${currentUserData.user_id}`);
+                        } else {
+                            query = query.eq('user_id', currentUserData.user_id);
+                        }
+                    } else if (currentUserRole === 'admin') {
+                        // Admins can see all requests for their institute
+                        if (currentInstitute) {
+                            query = query.eq('institute_code', currentInstitute.institute_code);
+                        }
+                    }
+                    
+                    const { data, error } = await query;
+                    
+                    if (error) throw error;
+                    
+                    allRequests = data || [];
+                    displayRequests();
+                    
+                } catch (error) {
+                    console.error('Error loading requests:', error);
+                    showError('Error loading requests: ' + error.message);
+                } finally {
+                    // Hide loading section
+                    document.getElementById('loadingSection').style.display = 'none';
+                }
+            }
+
+            function displayRequests() {
+                // Show/hide sections based on user role
+                const studentSection = document.getElementById('studentRequestsSection');
+                const teacherSection = document.getElementById('teacherRequestsSection');
+                const mySection = document.getElementById('myRequestsSection');
+
+                // Reset all sections
+                studentSection.style.display = 'none';
+                teacherSection.style.display = 'none';
+                mySection.style.display = 'none';
+
+                // Filter requests
+                const studentRequests = allRequests.filter(req => req.request_type === 'student_join');
+                const teacherRequests = allRequests.filter(req => req.request_type === 'teacher_join');
+                const myRequests = allRequests.filter(req => req.user_id === currentUserData.user_id);
+
+                // Show sections based on role and available requests
+                if (currentUserRole === 'admin' || currentUserRole === 'teacher') {
+                    if (studentRequests.length > 0) {
+                        studentSection.style.display = 'block';
+                        displayStudentRequests(studentRequests);
+                    } else {
+                        document.getElementById('noStudentRequests').style.display = 'block';
+                    }
+                }
+
+                if (currentUserRole === 'admin') {
+                    if (teacherRequests.length > 0) {
+                        teacherSection.style.display = 'block';
+                        displayTeacherRequests(teacherRequests);
+                    } else {
+                        document.getElementById('noTeacherRequests').style.display = 'block';
+                    }
+                }
+
+                if (myRequests.length > 0) {
+                    mySection.style.display = 'block';
+                    displayMyRequests(myRequests);
+                } else {
+                    document.getElementById('noMyRequests').style.display = 'block';
+                }
+            }
+
+            function displayStudentRequests(requests) {
+                const container = document.getElementById('studentRequestsContainer');
+                document.getElementById('noStudentRequests').style.display = 'none';
+                
+                container.innerHTML = requests.map(request => createRequestCard(request)).join('');
+                attachActionListeners(container);
+            }
+
+            function displayTeacherRequests(requests) {
+                const container = document.getElementById('teacherRequestsContainer');
+                document.getElementById('noTeacherRequests').style.display = 'none';
+                
+                container.innerHTML = requests.map(request => createRequestCard(request)).join('');
+                attachActionListeners(container);
+            }
+
+            function displayMyRequests(requests) {
+                const container = document.getElementById('myRequestsContainer');
+                document.getElementById('noMyRequests').style.display = 'none';
+                
+                container.innerHTML = requests.map(request => createRequestCard(request)).join('');
+                attachActionListeners(container);
+            }
+
+            function createRequestCard(request) {
+                const requestData = request.request_data || {};
+                const user = request.users || {};
+                const institute = request.admin_institutes || {};
+                
+                return `
+                    <div class="request-card ${request.status}">
+                        <div class="request-header">
+                            <div class="request-user-info">
+                                <div class="request-user-name">${user.full_name || 'Unknown User'}</div>
+                                <div class="request-user-email">${user.email || 'No email'}</div>
+                                <div class="request-meta">
+                                    <div class="request-meta-item">
+                                        <i class="fas fa-building"></i>
+                                        ${institute.institute_name || request.institute_code}
+                                    </div>
+                                    <div class="request-meta-item">
+                                        <i class="fas fa-phone"></i>
+                                        ${user.phone || 'No phone'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="request-type-badge type-${request.request_type === 'student_join' ? 'student' : 'teacher'}">
+                                    ${request.request_type === 'student_join' ? 'Student' : 'Teacher'}
+                                </span>
+                                <span class="request-status status-${request.status}">
+                                    ${request.status.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="request-details">
+                            <div class="detail-grid">
+                                ${renderRequestDetails(request)}
+                            </div>
+                        </div>
+                        
+                        <div class="request-date">
+                            Submitted: ${formatDate(request.created_at)}
+                        </div>
+                        
+                        ${renderRequestActions(request)}
+                    </div>
+                `;
+            }
+
+            function renderRequestDetails(request) {
+                const requestData = request.request_data || {};
+                
+                switch (request.request_type) {
+                    case 'student_join':
+                        return `
+                            <div class="detail-item">
+                                <span class="detail-label">Class:</span>
+                                <span class="detail-value">${requestData.currentClass || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Roll Number:</span>
+                                <span class="detail-value">${requestData.rollNumber || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Subjects:</span>
+                                <span class="detail-value">${requestData.subjects || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Father's Name:</span>
+                                <span class="detail-value">${requestData.fatherName || 'N/A'}</span>
+                            </div>
+                        `;
+                    
+                    case 'teacher_join':
+                        return `
+                            <div class="detail-item">
+                                <span class="detail-label">Qualification:</span>
+                                <span class="detail-value">${requestData.qualification || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Specialization:</span>
+                                <span class="detail-value">${requestData.specialization || 'N/A'}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Experience:</span>
+                                <span class="detail-value">${requestData.experience || 0} years</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Subjects:</span>
+                                <span class="detail-value">${requestData.subjects || 'N/A'}</span>
+                            </div>
+                        `;
+                    
+                    default:
+                        return '<div class="detail-item">No additional details available</div>';
+                }
+            }
+
+            function renderRequestActions(request) {
+                // Students can only view their own requests, no actions
+                if (currentUserRole === 'student') {
+                    return '<div class="no-actions-message">Waiting for admin approval</div>';
+                }
+                
+                // Users can't act on their own requests
+                if (request.user_id === currentUserData.user_id) {
+                    return '<div class="no-actions-message">Your request is pending review</div>';
+                }
+                
+                // Teachers can't approve teacher requests
+                if (currentUserRole === 'teacher' && request.request_type === 'teacher_join') {
+                    return '<div class="no-actions-message">Only admin can review teacher requests</div>';
+                }
+                
+                // Only show actions for pending requests
+                if (request.status !== 'pending') {
+                    return `
+                        <div class="no-actions-message">
+                            Request ${request.status} by admin
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="request-actions">
+                        <button class="action-btn btn-approve" data-request-id="${request.id}">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="action-btn btn-reject" data-request-id="${request.id}">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                `;
+            }
+
+            function attachActionListeners(container) {
+                container.querySelectorAll('.btn-approve').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const requestId = this.getAttribute('data-request-id');
+                        showActionModal(requestId, 'approve');
+                    });
+                });
+                
+                container.querySelectorAll('.btn-reject').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const requestId = this.getAttribute('data-request-id');
+                        showActionModal(requestId, 'reject');
+                    });
+                });
+            }
+
+            function showActionModal(requestId, action) {
+                const request = allRequests.find(r => r.id == requestId);
+                if (!request) return;
+
+                const modal = document.getElementById('actionModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalMessage = document.getElementById('modalMessage');
+                const modalConfirm = document.getElementById('modalConfirm');
+
+                if (action === 'approve') {
+                    modalTitle.textContent = 'Approve Request';
+                    modalMessage.textContent = `Are you sure you want to approve ${request.users.full_name}'s ${request.request_type === 'student_join' ? 'student' : 'teacher'} application?`;
+                    modalConfirm.textContent = 'Approve';
+                    modalConfirm.className = 'modal-btn modal-btn-approve';
+                } else {
+                    modalTitle.textContent = 'Reject Request';
+                    modalMessage.textContent = `Are you sure you want to reject ${request.users.full_name}'s ${request.request_type === 'student_join' ? 'student' : 'teacher'} application?`;
+                    modalConfirm.textContent = 'Reject';
+                    modalConfirm.className = 'modal-btn modal-btn-reject';
+                }
+
+                pendingAction = { requestId, action };
+                modal.style.display = 'flex';
+            }
+
+            async function updateRequestStatus(requestId, newStatus) {
+                try {
+                    // Find the request
+                    const request = allRequests.find(r => r.id == requestId);
+                    if (!request) throw new Error('Request not found');
+                    
+                    // Update request status
+                    const { error } = await supabase
+                        .from('requests')
+                        .update({
+                            status: newStatus,
+                            reviewed_by: currentUserData.user_id,
+                            reviewed_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', requestId);
+                    
+                    if (error) throw error;
+                    
+                    // If approved, create the actual record
+                    if (newStatus === 'approved') {
+                        await processApprovedRequest(request);
+                    }
+                    
+                    // Reload requests to reflect changes
+                    await loadRequests();
+                    
+                } catch (error) {
+                    console.error('Error updating request status:', error);
+                    alert('Error updating request: ' + error.message);
+                }
+            }
+
+            async function processApprovedRequest(request) {
+                try {
+                    const requestData = request.request_data || {};
+                    
+                    if (request.request_type === 'student_join') {
+                        // Create student_institutes record
+                        const { error } = await supabase
+                            .from('student_institutes')
+                            .insert([
+                                {
+                                    user_id: request.user_id,
+                                    institute_code: request.institute_code,
+                                    profile_photo_url: requestData.profilePhoto || null,
+                                    date_of_birth: requestData.dateOfBirth,
+                                    gender: requestData.gender,
+                                    current_class: requestData.currentClass,
+                                    roll_number: requestData.rollNumber,
+                                    section: requestData.section,
+                                    academic_year: requestData.academicYear,
+                                    subjects: requestData.subjects,
+                                    father_name: requestData.fatherName,
+                                    mother_name: requestData.motherName,
+                                    father_phone: requestData.fatherPhone,
+                                    mother_phone: requestData.motherPhone || null,
+                                    guardian_name: requestData.guardianName || null,
+                                    guardian_phone: requestData.guardianPhone || null,
+                                    parent_email: requestData.parentEmail || null,
+                                    address: requestData.address,
+                                    city: requestData.city,
+                                    state: requestData.state,
+                                    pincode: requestData.pincode,
+                                    country: requestData.country,
+                                    previous_school: requestData.previousSchool || null,
+                                    medical_info: requestData.medicalInfo || null,
+                                    emergency_contact: requestData.emergencyContact,
+                                    status: 'confirmed',
+                                    admission_date: new Date().toISOString()
+                                }
+                            ]);
+                        
+                        if (error) throw error;
+                        
+                        // Update user role to student
+                        await supabase
+                            .from('users')
+                            .update({ role: 'student' })
+                            .eq('user_id', request.user_id);
+                        
+                    } else if (request.request_type === 'teacher_join') {
+                        // Create teacher_institutes record
+                        const { error } = await supabase
+                            .from('teacher_institutes')
+                            .insert([
+                                {
+                                    user_id: request.user_id,
+                                    institute_code: request.institute_code,
+                                    profile_photo_url: requestData.profilePhoto || null,
+                                    qualification: requestData.qualification,
+                                    specialization: requestData.specialization,
+                                    experience_years: requestData.experience,
+                                    subjects_taught: requestData.subjects,
+                                    bio: requestData.bio,
+                                    date_of_birth: requestData.dateOfBirth,
+                                    gender: requestData.gender,
+                                    resume_url: requestData.resumeUrl || null,
+                                    available_hours: requestData.availableHours || null,
+                                    address: requestData.address || null,
+                                    emergency_contact: requestData.emergencyContact || null,
+                                    status: 'confirmed',
+                                    joining_date: new Date().toISOString(),
+                                    can_create_batches: true
+                                }
+                            ]);
+                        
+                        if (error) throw error;
+                        
+                        // Update user role to teacher
+                        await supabase
+                            .from('users')
+                            .update({ role: 'teacher' })
+                            .eq('user_id', request.user_id);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error processing approved request:', error);
+                    throw new Error('Failed to create user record: ' + error.message);
+                }
+            }
+
+            function setupEventListeners() {
+                // Modal event listeners
+                document.getElementById('modalCancel').addEventListener('click', function() {
+                    document.getElementById('actionModal').style.display = 'none';
+                    pendingAction = null;
+                });
+
+                document.getElementById('modalConfirm').addEventListener('click', function() {
+                    if (pendingAction) {
+                        const newStatus = pendingAction.action === 'approve' ? 'approved' : 'rejected';
+                        updateRequestStatus(pendingAction.requestId, newStatus);
+                        document.getElementById('actionModal').style.display = 'none';
+                        pendingAction = null;
+                    }
+                });
+
+                // Close modal when clicking outside
+                document.getElementById('actionModal').addEventListener('click', function(e) {
+                    if (e.target === this) {
+                        this.style.display = 'none';
+                        pendingAction = null;
+                    }
+                });
+            }
+
+            function formatDate(dateString) {
+                return new Date(dateString).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            function showError(message) {
+                const errorElement = document.getElementById('supabaseError');
+                const errorText = document.getElementById('supabaseErrorText');
+                errorText.textContent = message;
+                errorElement.style.display = 'flex';
+            }
+        });
+    </script>
+</body>
+</html>
