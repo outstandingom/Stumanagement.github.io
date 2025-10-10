@@ -894,48 +894,48 @@
             }
 
             async function loadRequests() {
-                try {
-                    let query = supabase
-                        .from('requests')
-                        .select(`
-                            *,
-                            users!inner(full_name, email, phone),
-                            admin_institutes!inner(institute_name)
-                        `)
-                        .order('created_at', { ascending: false });
-                    
-                    // Apply role-based filtering
-                    if (currentUserRole === 'student') {
-                        // Students can only see their own requests
-                        query = query.eq('user_id', currentUserData.user_id);
-                    } else if (currentUserRole === 'teacher') {
-                        // Teachers can see requests for their institute and their own requests
-                        if (currentInstitute) {
-                            query = query.or(`institute_code.eq.${currentInstitute.institute_code},user_id.eq.${currentUserData.user_id}`);
-                        } else {
-                            query = query.eq('user_id', currentUserData.user_id);
-                        }
-                    } else if (currentUserRole === 'admin') {
-                        // Admins can see all requests for their institute
-                        if (currentInstitute) {
-                            query = query.eq('institute_code', currentInstitute.institute_code);
-                        }
-                    }
-                    
-                    const { data, error } = await query;
-                    
-                    if (error) throw error;
-                    
-                    allRequests = data || [];
-                    displayRequests();
-                    
-                } catch (error) {
-                    console.error('Error loading requests:', error);
-                    showError('Error loading requests: ' + error.message);
-                } finally {
-                    // Hide loading section
-                    document.getElementById('loadingSection').style.display = 'none';
-                }
+    try {
+        let query = supabase
+            .from('requests')
+            .select(`
+                *,
+                users!requests_user_id_fkey(full_name, email, phone),
+                admin_institutes!inner(institute_name)
+            `)
+            .order('created_at', { ascending: false });
+        
+        // Apply role-based filtering
+        if (currentUserRole === 'student') {
+            // Students can only see their own requests
+            query = query.eq('user_id', currentUserData.user_id);
+        } else if (currentUserRole === 'teacher') {
+            // Teachers can see requests for their institute and their own requests
+            if (currentInstitute) {
+                query = query.or(`institute_code.eq.${currentInstitute.institute_code},user_id.eq.${currentUserData.user_id}`);
+            } else {
+                query = query.eq('user_id', currentUserData.user_id);
+            }
+        } else if (currentUserRole === 'admin') {
+            // Admins can see all requests for their institute
+            if (currentInstitute) {
+                query = query.eq('institute_code', currentInstitute.institute_code);
+            }
+        }
+        
+        const { data, error } = await query;
+        
+        if (error) throw error;
+        
+        allRequests = data || [];
+        displayRequests();
+        
+    } catch (error) {
+        console.error('Error loading requests:', error);
+        showError('Error loading requests: ' + error.message);
+    } finally {
+        // Hide loading section
+        document.getElementById('loadingSection').style.display = 'none';
+    }
             }
 
             function displayRequests() {
