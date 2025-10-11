@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Student Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --teacher-color: #9b59b6;
+            --teacher-dark: #8e44ad;
+            --student-color: #27ae60;
+            --student-dark: #219653;
+            --admin-color: #e74c3c;
+            --admin-dark: #c0392b;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --error: #e74c3c;
+            --info: #3498db;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --bottom-nav-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            padding-bottom: var(--bottom-nav-height);
+            min-height: 100vh;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header.teacher-header {
+            background: linear-gradient(135deg, var(--teacher-color) 0%, var(--teacher-dark) 100%);
+        }
+        
+        .header.student-header {
+            background: linear-gradient(135deg, var(--student-color) 0%, var(--student-dark) 100%);
+        }
+        
+        .header.admin-header {
+            background: linear-gradient(135deg, var(--admin-color) 0%, var(--admin-dark) 100%);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: var(--shadow);
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-avatar .placeholder {
+            color: var(--primary-blue);
+            font-size: 24px;
+        }
+        
+        .teacher-avatar .placeholder {
+            color: var(--teacher-color);
+        }
+        
+        .student-avatar .placeholder {
+            color: var(--student-color);
+        }
+        
+        .admin-avatar .placeholder {
+            color: var(--admin-color);
+        }
+        
+        .header-text {
+            flex: 1;
+        }
+        
+        .header-text h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* Dashboard Content */
+        .dashboard-content {
+            padding: 20px 15px;
+        }
+        
+        .welcome-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        .teacher-welcome {
+            border-left-color: var(--teacher-color);
+        }
+
+        .student-welcome {
+            border-left-color: var(--student-color);
+        }
+
+        .admin-welcome {
+            border-left-color: var(--admin-color);
+        }
+        
+        .welcome-card h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+        
+        .welcome-card p {
+            font-size: 14px;
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 20px;
+        }
+        
+        .stat-primary .stat-icon {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--primary-blue);
+        }
+        
+        .stat-success .stat-icon {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+        
+        .stat-warning .stat-icon {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+        
+        .stat-danger .stat-icon {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--text-dark);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        /* Quick Actions */
+        .quick-actions {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .teacher-section-title {
+            border-bottom-color: var(--teacher-color);
+        }
+
+        .student-section-title {
+            border-bottom-color: var(--student-color);
+        }
+
+        .admin-section-title {
+            border-bottom-color: var(--admin-color);
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .action-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary-light);
+        }
+        
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-size: 20px;
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--primary-blue);
+        }
+        
+        .action-card:nth-child(2) .action-icon {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+        
+        .action-card:nth-child(3) .action-icon {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+        
+        .action-card:nth-child(4) .action-icon {
+            background: rgba(155, 89, 182, 0.1);
+            color: var(--teacher-color);
+        }
+        
+        .action-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .action-desc {
+            font-size: 11px;
+            color: var(--text-light);
+        }
+        
+        /* Recent Activity */
+        .recent-activity {
+            margin-bottom: 20px;
+        }
+        
+        .activity-list {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--primary-blue);
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        
+        .activity-time {
+            font-size: 11px;
+            color: var(--text-light);
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .loading-state .loading {
+            margin: 0 auto 15px;
+        }
+        
+        /* Connection Error */
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* No Data State */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: var(--bottom-nav-height);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 0;
+            text-decoration: none;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-blue);
+        }
+
+        .teacher-nav-item.active {
+            color: var(--teacher-color);
+        }
+
+        .student-nav-item.active {
+            color: var(--student-color);
+        }
+
+        .admin-nav-item.active {
+            color: var(--admin-color);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            body {
+                max-width: 400px;
+                margin: 0 auto;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .actions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .dashboard-content {
+                padding: 15px 10px;
+            }
+            
+            .stat-card, .action-card, .welcome-card, .activity-list {
+                padding: 15px;
+            }
+            
+            .stats-grid, .actions-grid {
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header" id="profileHeader">
+        <div class="header-content">
+            <div class="user-avatar" id="userAvatar">
+                <div class="placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="header-text">
+                <h1 id="userName">Loading...</h1>
+                <p id="userRole">Dashboard</p>
+                <div class="role-badge" id="roleBadge"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Connection Error -->
+    <div class="connection-error" id="supabaseError">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="supabaseErrorText">Connection error</span>
+    </div>
+
+    <!-- Dashboard Content -->
+    <main class="dashboard-content">
+        <!-- Welcome Card -->
+        <div class="welcome-card" id="welcomeCard">
+            <h2 id="welcomeTitle">Welcome Back!</h2>
+            <p id="welcomeMessage">Loading your dashboard...</p>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="stats-grid" id="statsGrid" style="display: none;">
+            <!-- Stats will be dynamically populated based on user role -->
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="quick-actions" id="quickActionsSection" style="display: none;">
+            <h2 class="section-title" id="quickActionsTitle">
+                <i class="fas fa-bolt"></i>
+                Quick Actions
+            </h2>
+            <div class="actions-grid" id="actionsGrid">
+                <!-- Quick actions will be dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Recent Activity Section -->
+        <div class="recent-activity" id="recentActivitySection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-history"></i>
+                Recent Activity
+            </h2>
+            <div class="activity-list" id="activityList">
+                <!-- Activity items will be dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-state" id="loadingSection">
+            <div class="loading"></div>
+            <p>Loading dashboard...</p>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="request.html" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i>
+            <span class="nav-label">Requests</span>
+        </a>
+        <a href="batches.html" class="nav-item">
+            <i class="fas fa-users nav-icon"></i>
+            <span class="nav-label">Batches</span>
+        </a>
+        <a href="attendance.html" class="nav-item">
+            <i class="fas fa-clipboard-check nav-icon"></i>
+            <span class="nav-label">Attendance</span>
+        </a>
+        <a href="dashboard.html" class="nav-item active">
+            <i class="fas fa-tachometer-alt nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="index.html" class="nav-item" id="profileNavItem">
+            <i class="fas fa-user nav-icon"></i>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser = null;
+            let currentUserData = null;
+            let currentUserRole = null;
+            let currentInstitute = null;
+
+            // Initialize the dashboard
+            initializeDashboard();
+
+            async function initializeDashboard() {
+                await getCurrentUser();
+                await loadCurrentUserData();
+                await determineUserRoleAndInstitute();
+                setupHeader();
+                await loadDashboardData();
+                setupEventListeners();
+            }
+
+            async function getCurrentUser() {
+                try {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error) throw error;
+                    currentUser = user;
+                    
+                    if (!currentUser) {
+                        alert('Please login to view dashboard');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error getting current user:', error);
+                    alert('Please login to continue');
+                    window.location.href = 'login.html';
+                }
+            }
+
+            async function loadCurrentUserData() {
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', currentUser.id)
+                        .single();
+                    
+                    if (error) throw error;
+                    currentUserData = data;
+                    
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                }
+            }
+
+            async function determineUserRoleAndInstitute() {
+                if (!currentUserData) return;
+                
+                currentUserRole = currentUserData.role;
+                
+                // Determine institute based on role
+                if (currentUserRole === 'admin') {
+                    const { data } = await supabase
+                        .from('admin_institutes')
+                        .select('institute_name, institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .single();
+                    currentInstitute = data;
+                } else if (currentUserRole === 'teacher') {
+                    const { data } = await supabase
+                        .from('teacher_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data;
+                } else if (currentUserRole === 'student') {
+                    const { data } = await supabase
+                        .from('student_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data;
+                }
+            }
+
+            function setupHeader() {
+                if (currentUserData) {
+                    document.getElementById('userName').textContent = currentUserData.full_name;
+                    document.getElementById('userRole').textContent = `${currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1)} Dashboard`;
+                    document.getElementById('roleBadge').textContent = currentUserRole.toUpperCase();
+                    
+                    // Set header color based on role
+                    const header = document.getElementById('profileHeader');
+                    const navItems = document.querySelectorAll('.nav-item');
+                    const welcomeCard = document.getElementById('welcomeCard');
+                    
+                    if (currentUserRole === 'teacher') {
+                        header.classList.add('teacher-header');
+                        document.getElementById('userAvatar').classList.add('teacher-avatar');
+                        navItems.forEach(item => item.classList.add('teacher-nav-item'));
+                        welcomeCard.classList.add('teacher-welcome');
+                    } else if (currentUserRole === 'student') {
+                        header.classList.add('student-header');
+                        document.getElementById('userAvatar').classList.add('student-avatar');
+                        navItems.forEach(item => item.classList.add('student-nav-item'));
+                        welcomeCard.classList.add('student-welcome');
+                    } else if (currentUserRole === 'admin') {
+                        header.classList.add('admin-header');
+                        document.getElementById('userAvatar').classList.add('admin-avatar');
+                        navItems.forEach(item => item.classList.add('admin-nav-item'));
+                        welcomeCard.classList.add('admin-welcome');
+                    }
+                }
+            }
+
+            async function loadDashboardData() {
+                try {
+                    // Load role-specific data
+                    if (currentUserRole === 'student') {
+                        await loadStudentDashboard();
+                    } else if (currentUserRole === 'teacher') {
+                        await loadTeacherDashboard();
+                    } else if (currentUserRole === 'admin') {
+                        await loadAdminDashboard();
+                    }
+                    
+                    displayDashboard();
+                    
+                } catch (error) {
+                    console.error('Error loading dashboard data:', error);
+                    showError('Error loading dashboard: ' + error.message);
+                } finally {
+                    document.getElementById('loadingSection').style.display = 'none';
+                }
+            }
+
+            async function loadStudentDashboard() {
+                // Load student-specific data
+                const welcomeTitle = `Welcome, ${currentUserData.full_name}!`;
+                const welcomeMessage = `Here's your learning overview for today.`;
+                
+                document.getElementById('welcomeTitle').textContent = welcomeTitle;
+                document.getElementById('welcomeMessage').textContent = welcomeMessage;
+
+                // Load student batches count
+                const { data: myBatches, error: batchesError } = await supabase
+                    .from('batch_students')
+                    .select('*')
+                    .eq('student_id', currentUserData.user_id)
+                    .eq('status', 'approved');
+                
+                if (!batchesError) {
+                    window.studentBatchesCount = myBatches?.length || 0;
+                }
+
+                // Load attendance data
+                const { data: attendance, error: attendanceError } = await supabase
+                    .from('attendance')
+                    .select('*')
+                    .eq('student_id', currentUserData.user_id)
+                    .gte('attendance_date', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+                
+                if (!attendanceError) {
+                    const presentCount = attendance?.filter(a => a.status === 'present').length || 0;
+                    const totalCount = attendance?.length || 0;
+                    window.attendancePercentage = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
+                }
+
+                // Load pending requests
+                const { data: pendingRequests, error: requestsError } = await supabase
+                    .from('requests')
+                    .select('*')
+                    .eq('user_id', currentUserData.user_id)
+                    .eq('status', 'pending');
+                
+                if (!requestsError) {
+                    window.pendingRequestsCount = pendingRequests?.length || 0;
+                }
+            }
+
+            async function loadTeacherDashboard() {
+                // Load teacher-specific data
+                const welcomeTitle = `Welcome, ${currentUserData.full_name}!`;
+                const welcomeMessage = `Manage your classes and track student progress.`;
+                
+                document.getElementById('welcomeTitle').textContent = welcomeTitle;
+                document.getElementById('welcomeMessage').textContent = welcomeMessage;
+
+                // Load teacher batches count
+                const { data: myBatches, error: batchesError } = await supabase
+                    .from('batches')
+                    .select('*')
+                    .eq('teacher_id', currentUserData.user_id);
+                
+                if (!batchesError) {
+                    window.teacherBatchesCount = myBatches?.length || 0;
+                }
+
+                // Load total students
+                const { data: batchStudents, error: studentsError } = await supabase
+                    .from('batch_students')
+                    .select('batch_id')
+                    .in('batch_id', myBatches?.map(b => b.id) || [])
+                    .eq('status', 'approved');
+                
+                if (!studentsError) {
+                    window.totalStudentsCount = new Set(batchStudents?.map(bs => bs.student_id)).size || 0;
+                }
+
+                // Load pending approvals
+                const { data: pendingApprovals, error: approvalsError } = await supabase
+                    .from('batch_students')
+                    .select('*')
+                    .in('batch_id', myBatches?.map(b => b.id) || [])
+                    .eq('status', 'pending');
+                
+                if (!approvalsError) {
+                    window.pendingApprovalsCount = pendingApprovals?.length || 0;
+                }
+            }
+
+            async function loadAdminDashboard() {
+                // Load admin-specific data
+                const welcomeTitle = `Welcome, ${currentUserData.full_name}!`;
+                const welcomeMessage = `Manage your institute and monitor overall performance.`;
+                
+                document.getElementById('welcomeTitle').textContent = welcomeTitle;
+                document.getElementById('welcomeMessage').textContent = welcomeMessage;
+
+                // Load institute statistics
+                const { data: totalBatches, error: batchesError } = await supabase
+                    .from('batches')
+                    .select('*')
+                    .eq('institute_code', currentInstitute.institute_code);
+                
+                if (!batchesError) {
+                    window.totalBatchesCount = totalBatches?.length || 0;
+                }
+
+                // Load total teachers
+                const { data: totalTeachers, error: teachersError } = await supabase
+                    .from('teacher_institutes')
+                    .select('*')
+                    .eq('institute_code', currentInstitute.institute_code)
+                    .eq('status', 'confirmed');
+                
+                if (!teachersError) {
+                    window.totalTeachersCount = totalTeachers?.length || 0;
+                }
+
+                // Load total students
+                const { data: totalStudents, error: studentsError } = await supabase
+                    .from('student_institutes')
+                    .select('*')
+                    .eq('institute_code', currentInstitute.institute_code)
+                    .eq('status', 'confirmed');
+                
+                if (!studentsError) {
+                    window.totalStudentsCount = totalStudents?.length || 0;
+                }
+
+                // Load pending requests
+                const { data: pendingRequests, error: requestsError } = await supabase
+                    .from('requests')
+                    .select('*')
+                    .eq('institute_code', currentInstitute.institute_code)
+                    .eq('status', 'pending');
+                
+                if (!requestsError) {
+                    window.pendingRequestsCount = pendingRequests?.length || 0;
+                }
+            }
+
+            function displayDashboard() {
+                // Show dashboard sections
+                document.getElementById('statsGrid').style.display = 'grid';
+                document.getElementById('quickActionsSection').style.display = 'block';
+                document.getElementById('recentActivitySection').style.display = 'block';
+
+                // Display role-specific content
+                if (currentUserRole === 'student') {
+                    displayStudentDashboard();
+                } else if (currentUserRole === 'teacher') {
+                    displayTeacherDashboard();
+                } else if (currentUserRole === 'admin') {
+                    displayAdminDashboard();
+                }
+
+                // Update section titles based on role
+                const quickActionsTitle = document.getElementById('quickActionsTitle');
+                if (currentUserRole === 'teacher') {
+                    quickActionsTitle.classList.add('teacher-section-title');
+                } else if (currentUserRole === 'student') {
+                    quickActionsTitle.classList.add('student-section-title');
+                } else if (currentUserRole === 'admin') {
+                    quickActionsTitle.classList.add('admin-section-title');
+                }
+            }
+
+            function displayStudentDashboard() {
+                // Stats for Student
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-value">${window.studentBatchesCount || 0}</div>
+                        <div class="stat-label">My Batches</div>
+                    </div>
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-value">${window.attendancePercentage || 0}%</div>
+                        <div class="stat-label">Attendance</div>
+                    </div>
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-value">${window.pendingRequestsCount || 0}</div>
+                        <div class="stat-label">Pending</div>
+                    </div>
+                    <div class="stat-card stat-danger">
+                        <div class="stat-icon">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div class="stat-value">0</div>
+                        <div class="stat-label">Assignments</div>
+                    </div>
+                `;
+
+                // Quick Actions for Student
+                const actionsGrid = document.getElementById('actionsGrid');
+                actionsGrid.innerHTML = `
+                    <a href="batches.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="action-title">My Batches</div>
+                        <div class="action-desc">View your enrolled classes</div>
+                    </a>
+                    <a href="attendance.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="action-title">Attendance</div>
+                        <div class="action-desc">Check your attendance</div>
+                    </a>
+                    <a href="request.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="action-title">Requests</div>
+                        <div class="action-desc">View your requests</div>
+                    </a>
+                    <a href="index.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="action-title">Profile</div>
+                        <div class="action-desc">Update your profile</div>
+                    </a>
+                `;
+
+                // Recent Activity for Student
+                const activityList = document.getElementById('activityList');
+                activityList.innerHTML = `
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Joined Mathematics Batch</div>
+                            <div class="activity-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Attendance marked for today</div>
+                            <div class="activity-time">1 day ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">New assignment posted</div>
+                            <div class="activity-time">2 days ago</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function displayTeacherDashboard() {
+                // Stats for Teacher
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div class="stat-value">${window.teacherBatchesCount || 0}</div>
+                        <div class="stat-label">My Batches</div>
+                    </div>
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-value">${window.totalStudentsCount || 0}</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-value">${window.pendingApprovalsCount || 0}</div>
+                        <div class="stat-label">Pending Approvals</div>
+                    </div>
+                    <div class="stat-card stat-danger">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-value">85%</div>
+                        <div class="stat-label">Avg Attendance</div>
+                    </div>
+                `;
+
+                // Quick Actions for Teacher
+                const actionsGrid = document.getElementById('actionsGrid');
+                actionsGrid.innerHTML = `
+                    <a href="batches.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div class="action-title">My Batches</div>
+                        <div class="action-desc">Manage your classes</div>
+                    </a>
+                    <a href="attendance.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="action-title">Attendance</div>
+                        <div class="action-desc">Mark student attendance</div>
+                    </a>
+                    <a href="request.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="action-title">Requests</div>
+                        <div class="action-desc">Approve student requests</div>
+                    </a>
+                    <a href="index.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="action-title">Reports</div>
+                        <div class="action-desc">View performance reports</div>
+                    </a>
+                `;
+
+                // Recent Activity for Teacher
+                const activityList = document.getElementById('activityList');
+                activityList.innerHTML = `
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">New student joined batch</div>
+                            <div class="activity-time">1 hour ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Attendance marked for Class 10A</div>
+                            <div class="activity-time">3 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">New join request received</div>
+                            <div class="activity-time">1 day ago</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function displayAdminDashboard() {
+                // Stats for Admin
+                const statsGrid = document.getElementById('statsGrid');
+                statsGrid.innerHTML = `
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">
+                            <i class="fas fa-chalkboard-teacher"></i>
+                        </div>
+                        <div class="stat-value">${window.totalBatchesCount || 0}</div>
+                        <div class="stat-label">Total Batches</div>
+                    </div>
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-value">${window.totalStudentsCount || 0}</div>
+                        <div class="stat-label">Total Students</div>
+                    </div>
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-value">${window.totalTeachersCount || 0}</div>
+                        <div class="stat-label">Total Teachers</div>
+                    </div>
+                    <div class="stat-card stat-danger">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-value">${window.pendingRequestsCount || 0}</div>
+                        <div class="stat-label">Pending Requests</div>
+                    </div>
+                `;
+
+                // Quick Actions for Admin
+                const actionsGrid = document.getElementById('actionsGrid');
+                actionsGrid.innerHTML = `
+                    <a href="batches.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="action-title">Create Batch</div>
+                        <div class="action-desc">Create new batch</div>
+                    </a>
+                    <a href="request.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="action-title">Manage Requests</div>
+                        <div class="action-desc">Approve/reject requests</div>
+                    </a>
+                    <a href="index.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="action-title">Reports</div>
+                        <div class="action-desc">View institute reports</div>
+                    </a>
+                    <a href="index.html" class="action-card">
+                        <div class="action-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <div class="action-title">Settings</div>
+                        <div class="action-desc">Manage institute</div>
+                    </a>
+                `;
+
+                // Recent Activity for Admin
+                const activityList = document.getElementById('activityList');
+                activityList.innerHTML = `
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-plus"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">New batch created</div>
+                            <div class="activity-time">2 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">Teacher request approved</div>
+                            <div class="activity-time">5 hours ago</div>
+                        </div>
+                    </div>
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">New student registration</div>
+                            <div class="activity-time">1 day ago</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function setupEventListeners() {
+                // Add any dashboard-specific event listeners here
+            }
+
+            function showError(message) {
+                const errorElement = document.getElementById('supabaseError');
+                const errorText = document.getElementById('supabaseErrorText');
+                errorText.textContent = message;
+                errorElement.style.display = 'flex';
+            }
+        });
+    </script>
+</body>
+</html>
