@@ -56,6 +56,10 @@
             background: linear-gradient(135deg, var(--student-color) 0%, var(--student-dark) 100%);
         }
         
+        .header.admin-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        
         .header::before {
             content: '';
             position: absolute;
@@ -105,6 +109,10 @@
         
         .student-avatar .placeholder {
             color: var(--student-color);
+        }
+        
+        .admin-avatar .placeholder {
+            color: #e74c3c;
         }
         
         .header-text {
@@ -165,6 +173,11 @@
             color: var(--student-color);
             border-bottom: 2px solid var(--student-color);
         }
+
+        .admin-section-title {
+            color: #e74c3c;
+            border-bottom: 2px solid #e74c3c;
+        }
         
         .section-title i {
             color: var(--primary-blue);
@@ -176,6 +189,10 @@
 
         .student-section-title i {
             color: var(--student-color);
+        }
+
+        .admin-section-title i {
+            color: #e74c3c;
         }
         
         /* Bottom Navigation */
@@ -215,6 +232,10 @@
 
         .student-nav-item.active {
             color: var(--student-color);
+        }
+
+        .admin-nav-item.active {
+            color: #e74c3c;
         }
         
         .nav-icon {
@@ -275,6 +296,16 @@
         
         .btn-warning:hover {
             background: #e67e22;
+            transform: translateY(-1px);
+        }
+
+        .btn-admin {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-admin:hover {
+            background: #c0392b;
             transform: translateY(-1px);
         }
         
@@ -832,9 +863,9 @@
 
     <!-- Main Content -->
     <main class="profile-content">
-        <!-- Action Buttons (For Teachers & Admin) -->
+        <!-- Action Buttons (For Admin Only) -->
         <div class="action-buttons" id="actionButtons" style="display: none;">
-            <button class="btn btn-primary" id="createBatchBtn">
+            <button class="btn btn-admin" id="createBatchBtn" style="display: none;">
                 <i class="fas fa-plus"></i> Create New Batch
             </button>
             <button class="btn btn-success" id="joinBatchBtn" style="display: none;">
@@ -844,7 +875,7 @@
 
         <!-- My Batches Section -->
         <section class="section" id="myBatchesSection" style="display: none;">
-            <h2 class="section-title">
+            <h2 class="section-title" id="myBatchesTitle">
                 <i class="fas fa-users"></i>
                 My Batches
             </h2>
@@ -872,7 +903,7 @@
 
         <!-- All Batches Section (For Teachers & Admin) -->
         <section class="section" id="allBatchesSection" style="display: none;">
-            <h2 class="section-title">
+            <h2 class="section-title" id="allBatchesTitle">
                 <i class="fas fa-list"></i>
                 All Batches
             </h2>
@@ -1164,12 +1195,20 @@
                     
                     // Set header color based on role
                     const header = document.getElementById('profileHeader');
+                    const navItems = document.querySelectorAll('.nav-item');
+                    
                     if (currentUserRole === 'teacher') {
                         header.classList.add('teacher-header');
                         document.getElementById('userAvatar').classList.add('teacher-avatar');
+                        navItems.forEach(item => item.classList.add('teacher-nav-item'));
                     } else if (currentUserRole === 'student') {
                         header.classList.add('student-header');
                         document.getElementById('userAvatar').classList.add('student-avatar');
+                        navItems.forEach(item => item.classList.add('student-nav-item'));
+                    } else if (currentUserRole === 'admin') {
+                        header.classList.add('admin-header');
+                        document.getElementById('userAvatar').classList.add('admin-avatar');
+                        navItems.forEach(item => item.classList.add('admin-nav-item'));
                     }
                 }
             }
@@ -1266,14 +1305,17 @@
             }
 
             function displayBatches() {
-                // Show action buttons based on role
+                // Show action buttons based on role - ONLY ADMIN CAN CREATE BATCHES
                 const actionButtons = document.getElementById('actionButtons');
-                if (currentUserRole === 'teacher' || currentUserRole === 'admin') {
+                if (currentUserRole === 'admin') {
                     actionButtons.style.display = 'flex';
                     document.getElementById('createBatchBtn').style.display = 'inline-flex';
                 } else if (currentUserRole === 'student') {
                     actionButtons.style.display = 'flex';
                     document.getElementById('joinBatchBtn').style.display = 'inline-flex';
+                } else if (currentUserRole === 'teacher') {
+                    // Teachers can only view batches, not create them
+                    actionButtons.style.display = 'none';
                 }
 
                 // Show/hide sections based on user role
@@ -1285,6 +1327,12 @@
                 myBatchesSection.style.display = 'none';
                 instituteBatchesSection.style.display = 'none';
                 allBatchesSection.style.display = 'none';
+
+                // Update section titles based on role
+                if (currentUserRole === 'admin') {
+                    document.getElementById('myBatchesTitle').innerHTML = '<i class="fas fa-users"></i> Institute Batches';
+                    document.getElementById('allBatchesTitle').innerHTML = '<i class="fas fa-list"></i> All Batches (Manage)';
+                }
 
                 if (currentUserRole === 'student') {
                     if (myBatches.length > 0) {
@@ -1352,8 +1400,8 @@
                         .join(', ');
                 }
                 
-                const statusClass = batch.status || 'pending';
-                const statusText = (batch.status || 'pending').charAt(0).toUpperCase() + (batch.status || 'pending').slice(1);
+                const statusClass = batch.status || 'active';
+                const statusText = (batch.status || 'active').charAt(0).toUpperCase() + (batch.status || 'active').slice(1);
                 
                 return `
                     <div class="batch-card ${statusClass}">
@@ -1432,15 +1480,19 @@
                             </button>
                         `;
                     }
-                } else if (currentUserRole === 'teacher' || currentUserRole === 'admin') {
-                    const canEdit = currentUserRole === 'admin' || batch.teacher_id === currentUserData.user_id;
-                    
+                } else if (currentUserRole === 'teacher') {
+                    // Teachers can only view batches
                     return `
-                        ${canEdit ? `
+                        <button class="action-btn btn-view" data-batch-id="${batch.id}">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    `;
+                } else if (currentUserRole === 'admin') {
+                    // Admin can edit and view all batches
+                    return `
                         <button class="action-btn btn-edit" data-batch-id="${batch.id}">
                             <i class="fas fa-edit"></i> Edit
                         </button>
-                        ` : ''}
                         <button class="action-btn btn-view" data-batch-id="${batch.id}">
                             <i class="fas fa-eye"></i> View
                         </button>
@@ -1533,7 +1585,7 @@
             }
 
             function setupEventListeners() {
-                // Create batch button
+                // Create batch button (only for admin)
                 document.getElementById('createBatchBtn').addEventListener('click', showCreateBatchModal);
                 document.getElementById('joinBatchBtn').addEventListener('click', showJoinBatchModal);
                 
@@ -1564,6 +1616,12 @@
             }
 
             function showCreateBatchModal() {
+                // Only allow admin to create batches
+                if (currentUserRole !== 'admin') {
+                    alert('Only administrators can create batches.');
+                    return;
+                }
+                
                 editingBatch = null;
                 document.getElementById('batchModalTitle').textContent = 'Create New Batch';
                 document.getElementById('submitBatchText').textContent = 'Create Batch';
@@ -1589,6 +1647,12 @@
             async function handleBatchSubmit(e) {
                 e.preventDefault();
                 
+                // Double check that only admin can create batches
+                if (currentUserRole !== 'admin') {
+                    alert('Only administrators can create batches.');
+                    return;
+                }
+                
                 const submitBtn = document.getElementById('submitBatchBtn');
                 const submitText = document.getElementById('submitBatchText');
                 const submitLoader = document.getElementById('submitBatchLoader');
@@ -1607,10 +1671,10 @@
                         start_date: document.getElementById('startDate').value || null,
                         end_date: document.getElementById('endDate').value || null,
                         description: document.getElementById('description').value || null,
-                        schedule: currentSchedule, // This is now a proper object, not JSON string
+                        schedule: currentSchedule,
                         institute_code: currentInstitute.institute_code,
                         teacher_id: currentUserData.user_id,
-                        status: 'pending'
+                        status: 'active'
                     };
                     
                     if (editingBatch) {
@@ -1714,16 +1778,24 @@
                     });
                 });
                 
-                // Edit batch buttons
+                // Edit batch buttons (only for admin)
                 container.querySelectorAll('.btn-edit').forEach(btn => {
                     btn.addEventListener('click', function() {
-                        const batchId = this.getAttribute('data-batch-id');
-                        editBatch(batchId);
+                        if (currentUserRole === 'admin') {
+                            const batchId = this.getAttribute('data-batch-id');
+                            editBatch(batchId);
+                        }
                     });
                 });
             }
 
             async function editBatch(batchId) {
+                // Only allow admin to edit batches
+                if (currentUserRole !== 'admin') {
+                    alert('Only administrators can edit batches.');
+                    return;
+                }
+                
                 try {
                     const { data: batch, error } = await supabase
                         .from('batches')
