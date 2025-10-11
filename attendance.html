@@ -979,53 +979,7 @@
                 document.getElementById('attendanceDate').value = today;
             }
 
-            async function loadStudentsForAttendance() {
-                const batchId = document.getElementById('batchSelect').value;
-                const attendanceDate = document.getElementById('attendanceDate').value;
-                const subject = document.getElementById('subjectSelect').value;
-                
-                if (!batchId || !attendanceDate || !subject) {
-                    alert('Please select batch, date, and subject');
-                    return;
-                }
-                
-                try {
-                    // Get enrolled students
-                    const { data: enrolledStudents, error: enrollError } = await supabase
-                        .from('batch_students')
-                        .select(`
-                            users!inner(full_name, user_id),
-                            student_institutes!inner(roll_number)
-                        `)
-                        .eq('batch_id', batchId)
-                        .eq('status', 'approved');
-                    
-                    if (enrollError) throw enrollError;
-                    
-                    // Get existing attendance for the date
-                    const { data: existingAttendance, error: attendanceError } = await supabase
-                        .from('attendance')
-                        .select('*')
-                        .eq('batch_id', batchId)
-                        .eq('attendance_date', attendanceDate)
-                        .eq('subject', subject);
-                    
-                    if (attendanceError) throw attendanceError;
-                    
-                    // Create attendance map for quick lookup
-                    const attendanceMap = {};
-                    existingAttendance.forEach(record => {
-                        attendanceMap[record.student_id] = record.status;
-                    });
-                    
-                    displayStudentList(enrolledStudents, attendanceMap);
-                    document.getElementById('attendanceMarkingSection').style.display = 'block';
-                    
-                } catch (error) {
-                    console.error('Error loading students:', error);
-                    showError('Error loading students: ' + error.message);
-                }
-            }
+            
 
             function displayStudentList(students, attendanceMap) {
                 const container = document.getElementById('studentList');
@@ -1055,6 +1009,83 @@
                     container.appendChild(row);
                 });
             }
+
+                async function loadStudentsForAttendance() {
+    const batchId = document.getElementById('batchSelect').value;
+    const attendanceDate = document.getElementById('attendanceDate').value;
+    const subject = document.getElementById('subjectSelect').value;
+    
+    if (!batchId || !attendanceDate || !subject) {
+        alert('Please select batch, date, and subject');
+        return;
+    }
+    
+    try {
+        // Get enrolled students
+        const { data: enrolledStudents, error: enrollError } = await supabase
+            .from('batch_students')
+            .select('student_id')
+            .eq('batch_id', batchId)
+            .eq('status', 'approved');
+        
+        if (enrollError) throw enrollError;
+        
+        if (!enrolledStudents || enrolledStudents.length === 0) {
+            displayStudentList([], {});
+            return;
+        }
+        
+        // Get student details and roll numbers
+        const studentIds = enrolledStudents.map(student => student.student_id);
+        
+        const { data: studentDetails, error: studentError } = await supabase
+            .from('users')
+            .select('user_id, full_name')
+            .in('user_id', studentIds);
+        
+        if (studentError) throw studentError;
+        
+        const { data: studentInstituteDetails, error: instituteError } = await supabase
+            .from('student_institutes')
+            .select('user_id, roll_number')
+            .in('user_id', studentIds)
+            .eq('institute_code', currentInstitute.institute_code);
+        
+        if (instituteError) throw instituteError;
+        
+        // Combine the data
+        const combinedStudents = studentDetails.map(student => {
+            const instituteDetail = studentInstituteDetails.find(si => si.user_id === student.user_id);
+            return {
+                users: student,
+                student_institutes: instituteDetail || { roll_number: 'N/A' }
+            };
+        });
+        
+        // Get existing attendance for the date
+        const { data: existingAttendance, error: attendanceError } = await supabase
+            .from('attendance')
+            .select('*')
+            .eq('batch_id', batchId)
+            .eq('attendance_date', attendanceDate)
+            .eq('subject', subject);
+        
+        if (attendanceError) throw attendanceError;
+        
+        // Create attendance map for quick lookup
+        const attendanceMap = {};
+        existingAttendance.forEach(record => {
+            attendanceMap[record.student_id] = record.status;
+        });
+        
+        displayStudentList(combinedStudents, attendanceMap);
+        document.getElementById('attendanceMarkingSection').style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error loading students:', error);
+        showError('Error loading students: ' + error.message);
+    }
+    }
 
             async function saveAttendance() {
                 const batchId = document.getElementById('batchSelect').value;
