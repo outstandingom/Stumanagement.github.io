@@ -1352,8 +1352,8 @@
                         .join(', ');
                 }
                 
-                const statusClass = batch.status || 'pending';
-                const statusText = (batch.status || 'pending').charAt(0).toUpperCase() + (batch.status || 'pending').slice(1);
+                const statusClass = batch.status || 'approved';
+                const statusText = (batch.status || 'approved').charAt(0).toUpperCase() + (batch.status || 'approved').slice(1);
                 
                 return `
                     <div class="batch-card ${statusClass}">
