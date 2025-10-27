@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batches - Student Management System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --teacher-color: #9b59b6;
+            --teacher-dark: #8e44ad;
+            --student-color: #27ae60;
+            --student-dark: #219653;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --bottom-nav-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            padding-bottom: var(--bottom-nav-height);
+            min-height: 100vh;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header.teacher-header {
+            background: linear-gradient(135deg, var(--teacher-color) 0%, var(--teacher-dark) 100%);
+        }
+        
+        .header.student-header {
+            background: linear-gradient(135deg, var(--student-color) 0%, var(--student-dark) 100%);
+        }
+        
+        .header.admin-header {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: var(--shadow);
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .user-avatar .placeholder {
+            color: var(--primary-blue);
+            font-size: 24px;
+        }
+        
+        .teacher-avatar .placeholder {
+            color: var(--teacher-color);
+        }
+        
+        .student-avatar .placeholder {
+            color: var(--student-color);
+        }
+        
+        .admin-avatar .placeholder {
+            color: #e74c3c;
+        }
+        
+        .header-text {
+            flex: 1;
+        }
+        
+        .header-text h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* Profile Content */
+        .profile-content {
+            padding: 20px 15px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .teacher-section-title {
+            color: var(--teacher-color);
+            border-bottom: 2px solid var(--teacher-color);
+        }
+
+        .student-section-title {
+            color: var(--student-color);
+            border-bottom: 2px solid var(--student-color);
+        }
+
+        .admin-section-title {
+            color: #e74c3c;
+            border-bottom: 2px solid #e74c3c;
+        }
+        
+        .section-title i {
+            color: var(--primary-blue);
+        }
+
+        .teacher-section-title i {
+            color: var(--teacher-color);
+        }
+
+        .student-section-title i {
+            color: var(--student-color);
+        }
+
+        .admin-section-title i {
+            color: #e74c3c;
+        }
+        
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: var(--bottom-nav-height);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 0;
+            text-decoration: none;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-blue);
+        }
+
+        .teacher-nav-item.active {
+            color: var(--teacher-color);
+        }
+
+        .student-nav-item.active {
+            color: var(--student-color);
+        }
+
+        .admin-nav-item.active {
+            color: #e74c3c;
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #e67e22;
+            transform: translateY(-1px);
+        }
+
+        .btn-admin {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-admin:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+        
+        /* Batch Cards */
+        .batches-container {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .batch-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .batch-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow);
+        }
+        
+        .batch-card.pending {
+            border-left: 4px solid var(--warning);
+        }
+        
+        .batch-card.active {
+            border-left: 4px solid var(--success);
+        }
+        
+        .batch-card.inactive {
+            border-left: 4px solid var(--text-light);
+        }
+        
+        .batch-card.rejected {
+            border-left: 4px solid var(--error);
+        }
+        
+        .batch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
+        .batch-info {
+            flex: 1;
+        }
+        
+        .batch-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+        }
+        
+        .batch-code {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        
+        .batch-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        
+        .batch-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        
+        .batch-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-pending {
+            background: rgba(243, 156, 18, 0.1);
+            color: var(--warning);
+        }
+        
+        .status-active {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--success);
+        }
+        
+        .status-inactive {
+            background: rgba(149, 165, 166, 0.1);
+            color: var(--text-light);
+        }
+        
+        .status-rejected {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+        }
+        
+        .batch-details {
+            margin-bottom: 15px;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .detail-label {
+            font-size: 11px;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            font-size: 13px;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        
+        .batch-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-join {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-join:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+        
+        .btn-edit {
+            background: var(--primary-blue);
+            color: white;
+        }
+        
+        .btn-edit:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-delete {
+            background: var(--error);
+            color: white;
+        }
+        
+        .btn-delete:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+        
+        .btn-view {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-view:hover {
+            background: #e67e22;
+            transform: translateY(-1px);
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .loading-state .loading {
+            margin: 0 auto 15px;
+        }
+        
+        /* Connection Error */
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* No Data State */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        .form-group label.required::after {
+            content: " *";
+            color: var(--error);
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background-color: #f9f9f9;
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            background-color: white;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
+        
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .modal-btn-cancel {
+            background: var(--bg-light);
+            color: var(--text-dark);
+        }
+        
+        .modal-btn-submit {
+            background: var(--primary-blue);
+            color: white;
+        }
+        
+        .modal-btn-submit:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Schedule Table Styles */
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .schedule-table th,
+        .schedule-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .schedule-table th {
+            background: var(--primary-blue);
+            color: white;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .schedule-table select,
+        .schedule-table input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .schedule-table select:focus,
+        .schedule-table input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+        
+        .schedule-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .schedule-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid var(--primary-blue);
+        }
+        
+        .schedule-preview h4 {
+            margin-bottom: 10px;
+            color: var(--primary-dark);
+        }
+        
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .schedule-item:last-child {
+            border-bottom: none;
+        }
+        
+        .remove-schedule {
+            background: none;
+            border: none;
+            color: var(--error);
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .no-schedule {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-light);
+            font-style: italic;
+        }
+        
+        /* New Styles for Multiple Subjects */
+        .subjects-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .subject-tag {
+            background: var(--primary-blue);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .subject-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .subject-input {
+            flex: 1;
+        }
+        
+        .subjects-preview {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border-left: 4px solid var(--primary-blue);
+        }
+        
+        .subjects-preview h4 {
+            margin-bottom: 10px;
+            color: var(--primary-dark);
+        }
+        
+        .remove-subject {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 2px;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .remove-subject:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .subject-count {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+        
+        /* Responsive Design */
+        @media (min-width: 768px) {
+            body {
+                max-width: 400px;
+                margin: 0 auto;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .user-avatar {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .header-text h1 {
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                max-width: 400px;
+                margin: 0 auto;
+                border-left: 1px solid #ddd;
+                border-right: 1px solid #ddd;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            
+            .user-avatar {
+                width: 80px;
+                height: 80px;
+            }
+            
+            .header-text h1 {
+                font-size: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .batch-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            
+            .batch-actions {
+                justify-content: stretch;
+            }
+            
+            .action-btn {
+                flex: 1;
+                justify-content: center;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .profile-content {
+                padding: 15px 10px;
+            }
+            
+            .section {
+                padding: 15px;
+            }
+            
+            .batch-card {
+                padding: 15px;
+            }
+            
+            .batch-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .batch-actions {
+                flex-direction: column;
+            }
+            
+            .nav-label {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header" id="profileHeader">
+        <div class="header-content">
+            <div class="user-avatar" id="userAvatar">
+                <div class="placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="header-text">
+                <h1 id="userName">Loading...</h1>
+                <p id="userRole">Batches Management</p>
+                <div class="role-badge" id="roleBadge"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Connection Error -->
+    <div class="connection-error" id="supabaseError">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="supabaseErrorText">Connection error</span>
+    </div>
+
+    <!-- Main Content -->
+    <main class="profile-content">
+        <!-- Action Buttons (For Admin Only) -->
+        <div class="action-buttons" id="actionButtons" style="display: none;">
+            <button class="btn btn-admin" id="createBatchBtn" style="display: none;">
+                <i class="fas fa-plus"></i> Create New Batch
+            </button>
+            <button class="btn btn-success" id="joinBatchBtn" style="display: none;">
+                <i class="fas fa-sign-in-alt"></i> Join Batch
+            </button>
+        </div>
+
+        <!-- My Batches Section -->
+        <section class="section" id="myBatchesSection" style="display: none;">
+            <h2 class="section-title" id="myBatchesTitle">
+                <i class="fas fa-users"></i>
+                My Batches
+            </h2>
+            <div class="batches-container" id="myBatchesContainer">
+                <div class="no-data" id="noMyBatches">
+                    <p>You are not enrolled in any batches yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Institute Batches Section (For Students) -->
+        <section class="section" id="instituteBatchesSection" style="display: none;">
+            <h2 class="section-title">
+                <i class="fas fa-school"></i>
+                Available Batches
+            </h2>
+            <div class="batches-container" id="instituteBatchesContainer">
+                <div class="no-data" id="noInstituteBatches">
+                    <i class="fas fa-school"></i>
+                    <h3>No Batches Available</h3>
+                    <p>There are no active batches in your institute at the moment.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- All Batches Section (For Teachers & Admin) -->
+        <section class="section" id="allBatchesSection" style="display: none;">
+            <h2 class="section-title" id="allBatchesTitle">
+                <i class="fas fa-list"></i>
+                All Batches
+            </h2>
+            <div class="batches-container" id="allBatchesContainer">
+                <div class="no-data" id="noAllBatches">
+                    <i class="fas fa-list"></i>
+                    <h3>No Batches Found</h3>
+                    <p>There are no batches in your institute yet.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Loading State -->
+        <section class="section" id="loadingSection">
+            <div class="loading-state">
+                <div class="loading"></div>
+                <p>Loading batches...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="request.html" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i>
+            <span class="nav-label">Requests</span>
+        </a>
+        <a href="batches.html" class="nav-item active">
+            <i class="fas fa-users nav-icon"></i>
+            <span class="nav-label">Batches</span>
+        </a>
+        <a href="attendance.html" class="nav-item">
+            <i class="fas fa-clipboard-check nav-icon"></i>
+            <span class="nav-label">Attendance</span>
+        </a>
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-tachometer-alt nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="profile.html" class="nav-item" id="profileNavItem">
+            <i class="fas fa-user nav-icon"></i>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+
+    <!-- Create/Edit Batch Modal -->
+    <div class="modal" id="batchModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="batchModalTitle">Create New Batch</h3>
+                <button class="close-modal" id="closeBatchModal">&times;</button>
+            </div>
+            <form id="batchForm">
+                <div class="form-group">
+                    <label for="batchName" class="required">Batch Name</label>
+                    <input type="text" id="batchName" placeholder="e.g., Grade 10 Science" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="batchCode" class="required">Batch Code</label>
+                    <input type="text" id="batchCode" placeholder="e.g., SCI10A" required>
+                </div>
+                
+                <!-- Updated Subjects Section for Multiple Subjects -->
+                <div class="form-group">
+                    <label class="required">Subjects</label>
+                    <div class="subject-input-container">
+                        <input type="text" id="subjectInput" class="subject-input" placeholder="e.g., Mathematics">
+                        <button type="button" class="action-btn btn-primary" id="addSubjectBtn">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div class="subject-count" id="subjectCount">0 subjects added</div>
+                    <div class="subjects-preview">
+                        <h4>Selected Subjects</h4>
+                        <div class="subjects-container" id="subjectsPreview">
+                            <div class="no-schedule">No subjects added yet</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="batchPrice">Batch Price (₹)</label>
+                        <input type="number" id="batchPrice" placeholder="0" min="0" step="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maxStudents">Max Students</label>
+                        <input type="number" id="maxStudents" placeholder="30" min="1" max="100">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="endDate">End Date</label>
+                        <input type="date" id="endDate">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" placeholder="Describe the batch curriculum and objectives..."></textarea>
+                </div>
+                
+                <!-- Schedule Table -->
+                <div class="form-group">
+                    <label>Class Schedule</label>
+                    <div class="schedule-preview" id="schedulePreview">
+                        <h4>Class Schedule</h4>
+                        <div id="schedulePreviewContent" class="no-schedule">No schedule added yet</div>
+                    </div>
+                    
+                    <table class="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleTableBody">
+                            <tr>
+                                <td>
+                                    <select class="day-select">
+                                        <option value="">Select Day</option>
+                                        <option value="monday">Monday</option>
+                                        <option value="tuesday">Tuesday</option>
+                                        <option value="wednesday">Wednesday</option>
+                                        <option value="thursday">Thursday</option>
+                                        <option value="friday">Friday</option>
+                                        <option value="saturday">Saturday</option>
+                                        <option value="sunday">Sunday</option>
+                                    </select>
+                                </td>
+                                <td><input type="time" class="start-time" value="09:00"></td>
+                                <td><input type="time" class="end-time" value="10:00"></td>
+                                <td>
+                                    <button type="button" class="action-btn btn-primary add-schedule">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="schedule-actions">
+                        <button type="button" class="action-btn btn-warning" id="clearSchedule">
+                            <i class="fas fa-trash"></i> Clear All Schedule
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn modal-btn-cancel" id="cancelBatchBtn">Cancel</button>
+                    <button type="submit" class="modal-btn modal-btn-submit" id="submitBatchBtn">
+                        <span id="submitBatchText">Create Batch</span>
+                        <span id="submitBatchLoader" class="loading" style="display: none;"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Join Batch Modal -->
+    <div class="modal" id="joinBatchModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Join Batch</h3>
+                <button class="close-modal" id="closeJoinBatchModal">&times;</button>
+            </div>
+            <form id="joinBatchForm">
+                <div class="form-group">
+                    <label for="batchCodeJoin" class="required">Batch Code</label>
+                    <input type="text" id="batchCodeJoin" placeholder="Enter batch code" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="joinReason">Reason for Joining</label>
+                    <textarea id="joinReason" placeholder="Why do you want to join this batch?"></textarea>
+                </div>
+                
+                <div class="modal-buttons">
+                    <button type="button" class="modal-btn modal-btn-cancel" id="cancelJoinBatchBtn">Cancel</button>
+                    <button type="submit" class="modal-btn modal-btn-submit" id="submitJoinBatchBtn">
+                        <span id="submitJoinBatchText">Submit Request</span>
+                        <span id="submitJoinBatchLoader" class="loading" style="display: none;"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser = null;
+            let currentUserData = null;
+            let currentUserRole = null;
+            let currentInstitute = null;
+            let allBatches = [];
+            let myBatches = [];
+            let instituteBatches = [];
+            let editingBatch = null;
+            let currentSchedule = {};
+            let currentSubjects = []; // Array to store multiple subjects
+
+            // Initialize the page
+            initializePage();
+
+            async function initializePage() {
+                await getCurrentUser();
+                await loadCurrentUserData();
+                await determineUserRoleAndInstitute();
+                setupHeader();
+                await loadBatches();
+                setupEventListeners();
+            }
+
+            async function getCurrentUser() {
+                try {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error) throw error;
+                    currentUser = user;
+                    
+                    if (!currentUser) {
+                        alert('Please login to view batches');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error getting current user:', error);
+                    alert('Please login to continue');
+                    window.location.href = 'login.html';
+                }
+            }
+
+            async function loadCurrentUserData() {
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', currentUser.id)
+                        .single();
+                    
+                    if (error) throw error;
+                    currentUserData = data;
+                    
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                }
+            }
+
+            async function determineUserRoleAndInstitute() {
+                if (!currentUserData) return;
+                
+                currentUserRole = currentUserData.role;
+                
+                // Determine institute based on role
+                if (currentUserRole === 'admin') {
+                    const { data } = await supabase
+                        .from('admin_institutes')
+                        .select('institute_name, institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .single();
+                    currentInstitute = data;
+                } else if (currentUserRole === 'teacher') {
+                    const { data } = await supabase
+                        .from('teacher_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data;
+                } else if (currentUserRole === 'student') {
+                    const { data } = await supabase
+                        .from('student_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data;
+                }
+            }
+
+            function setupHeader() {
+                if (currentUserData) {
+                    document.getElementById('userName').textContent = currentUserData.full_name;
+                    document.getElementById('userRole').textContent = `${currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1)} Dashboard`;
+                    document.getElementById('roleBadge').textContent = currentUserRole.toUpperCase();
+                    
+                    // Set header color based on role
+                    const header = document.getElementById('profileHeader');
+                    const navItems = document.querySelectorAll('.nav-item');
+                    
+                    if (currentUserRole === 'teacher') {
+                        header.classList.add('teacher-header');
+                        document.getElementById('userAvatar').classList.add('teacher-avatar');
+                        navItems.forEach(item => item.classList.add('teacher-nav-item'));
+                    } else if (currentUserRole === 'student') {
+                        header.classList.add('student-header');
+                        document.getElementById('userAvatar').classList.add('student-avatar');
+                        navItems.forEach(item => item.classList.add('student-nav-item'));
+                    } else if (currentUserRole === 'admin') {
+                        header.classList.add('admin-header');
+                        document.getElementById('userAvatar').classList.add('admin-avatar');
+                        navItems.forEach(item => item.classList.add('admin-nav-item'));
+                    }
+                }
+            }
+
+            // Safe JSON parsing function
+            function safeJsonParse(str, defaultValue = {}) {
+                if (!str) return defaultValue;
+                if (typeof str === 'object') return str;
+                
+                try {
+                    return JSON.parse(str);
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                    return defaultValue;
+                }
+            }
+
+            // Safe array parsing for subjects
+            function safeArrayParse(arr, defaultValue = []) {
+                if (!arr) return defaultValue;
+                if (Array.isArray(arr)) return arr;
+                if (typeof arr === 'string') {
+                    try {
+                        return JSON.parse(arr);
+                    } catch (e) {
+                        // If it's a comma-separated string, split it
+                        return arr.split(',').map(s => s.trim()).filter(s => s);
+                    }
+                }
+                return defaultValue;
+            }
+
+            async function loadBatches() {
+                try {
+                    // Load batches based on user role
+                    if (currentUserRole === 'student') {
+                        await loadStudentBatches();
+                    } else if (currentUserRole === 'teacher' || currentUserRole === 'admin') {
+                        await loadTeacherAdminBatches();
+                    }
+                    
+                    displayBatches();
+                    
+                } catch (error) {
+                    console.error('Error loading batches:', error);
+                    showError('Error loading batches: ' + error.message);
+                } finally {
+                    document.getElementById('loadingSection').style.display = 'none';
+                }
+            }
+
+            async function loadStudentBatches() {
+                // Load batches student is enrolled in
+                const { data: myEnrollments, error: enrollError } = await supabase
+                    .from('batch_students')
+                    .select(`
+                        *,
+                        batches!inner (*, users!batches_teacher_id_fkey(full_name))
+                    `)
+                    .eq('student_id', currentUserData.user_id);
+                
+                if (enrollError) throw enrollError;
+                
+                myBatches = (myEnrollments || []).map(enrollment => ({
+                    ...enrollment.batches,
+                    enrollment_status: enrollment.status,
+                    // Safe schedule parsing
+                    schedule: safeJsonParse(enrollment.batches.schedule),
+                    // Safe subjects array parsing
+                    subject: safeArrayParse(enrollment.batches.subject)
+                }));
+
+                // Load available batches in institute
+                const { data: availableBatches, error: batchesError } = await supabase
+                    .from('batches')
+                    .select('*, users!batches_teacher_id_fkey(full_name)')
+                    .eq('institute_code', currentInstitute.institute_code)
+                    .eq('status', 'active');
+                
+                if (batchesError) throw batchesError;
+                
+                // Filter out batches student is already enrolled in
+                const myBatchIds = myBatches.map(b => b.id);
+                instituteBatches = (availableBatches || [])
+                    .filter(batch => !myBatchIds.includes(batch.id))
+                    .map(batch => ({
+                        ...batch,
+                        schedule: safeJsonParse(batch.schedule),
+                        subject: safeArrayParse(batch.subject)
+                    }));
+            }
+
+            async function loadTeacherAdminBatches() {
+                // Load all batches for the institute
+                const { data: batches, error } = await supabase
+                    .from('batches')
+                    .select('*, users!batches_teacher_id_fkey(full_name)')
+                    .eq('institute_code', currentInstitute.institute_code)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                allBatches = (batches || []).map(batch => ({
+                    ...batch,
+                    schedule: safeJsonParse(batch.schedule),
+                    subject: safeArrayParse(batch.subject)
+                }));
+                
+                // For teachers, also load batches they're teaching
+                if (currentUserRole === 'teacher') {
+                    myBatches = allBatches.filter(batch => batch.teacher_id === currentUserData.user_id);
+                }
+            }
+
+            function displayBatches() {
+                // Show action buttons based on role - ONLY ADMIN CAN CREATE BATCHES
+                const actionButtons = document.getElementById('actionButtons');
+                if (currentUserRole === 'admin') {
+                    actionButtons.style.display = 'flex';
+                    document.getElementById('createBatchBtn').style.display = 'inline-flex';
+                } else if (currentUserRole === 'student') {
+                    actionButtons.style.display = 'flex';
+                    document.getElementById('joinBatchBtn').style.display = 'inline-flex';
+                } else if (currentUserRole === 'teacher') {
+                    // Teachers can only view batches, not create them
+                    actionButtons.style.display = 'none';
+                }
+
+                // Show/hide sections based on user role
+                const myBatchesSection = document.getElementById('myBatchesSection');
+                const instituteBatchesSection = document.getElementById('instituteBatchesSection');
+                const allBatchesSection = document.getElementById('allBatchesSection');
+
+                // Reset all sections
+                myBatchesSection.style.display = 'none';
+                instituteBatchesSection.style.display = 'none';
+                allBatchesSection.style.display = 'none';
+
+                // Update section titles based on role
+                if (currentUserRole === 'admin') {
+                    document.getElementById('myBatchesTitle').innerHTML = '<i class="fas fa-users"></i> Institute Batches';
+                    document.getElementById('allBatchesTitle').innerHTML = '<i class="fas fa-list"></i> All Batches (Manage)';
+                }
+
+                if (currentUserRole === 'student') {
+                    if (myBatches.length > 0) {
+                        myBatchesSection.style.display = 'block';
+                        displayMyBatches(myBatches);
+                    } else {
+                        document.getElementById('noMyBatches').style.display = 'block';
+                    }
+
+                    if (instituteBatches.length > 0) {
+                        instituteBatchesSection.style.display = 'block';
+                        displayInstituteBatches(instituteBatches);
+                    } else {
+                        document.getElementById('noInstituteBatches').style.display = 'block';
+                    }
+                } else if (currentUserRole === 'teacher' || currentUserRole === 'admin') {
+                    if (myBatches.length > 0) {
+                        myBatchesSection.style.display = 'block';
+                        displayMyBatches(myBatches);
+                    } else {
+                        document.getElementById('noMyBatches').style.display = 'block';
+                    }
+
+                    if (allBatches.length > 0) {
+                        allBatchesSection.style.display = 'block';
+                        displayAllBatches(allBatches);
+                    } else {
+                        document.getElementById('noAllBatches').style.display = 'block';
+                    }
+                }
+            }
+
+            function displayMyBatches(batches) {
+                const container = document.getElementById('myBatchesContainer');
+                document.getElementById('noMyBatches').style.display = 'none';
+                
+                container.innerHTML = batches.map(batch => createBatchCard(batch, 'my')).join('');
+                attachBatchActionListeners(container, 'my');
+            }
+
+            function displayInstituteBatches(batches) {
+                const container = document.getElementById('instituteBatchesContainer');
+                document.getElementById('noInstituteBatches').style.display = 'none';
+                
+                container.innerHTML = batches.map(batch => createBatchCard(batch, 'institute')).join('');
+                attachBatchActionListeners(container, 'institute');
+            }
+
+            function displayAllBatches(batches) {
+                const container = document.getElementById('allBatchesContainer');
+                document.getElementById('noAllBatches').style.display = 'none';
+                
+                container.innerHTML = batches.map(batch => createBatchCard(batch, 'all')).join('');
+                attachBatchActionListeners(container, 'all');
+            }
+
+            function createBatchCard(batch, type) {
+                const teacherName = batch.users?.full_name || 'Unknown Teacher';
+                
+                // Safely handle schedule display
+                let scheduleText = 'No schedule set';
+                if (batch.schedule && Object.keys(batch.schedule).length > 0) {
+                    scheduleText = Object.entries(batch.schedule)
+                        .map(([day, time]) => `${day.charAt(0).toUpperCase() + day.slice(1)}: ${time}`)
+                        .join(', ');
+                }
+                
+                // Handle subjects display (array)
+                const subjects = safeArrayParse(batch.subject);
+                const subjectsText = subjects.join(', ');
+                
+                const statusClass = batch.status || 'active';
+                const statusText = (batch.status || 'active').charAt(0).toUpperCase() + (batch.status || 'active').slice(1);
+                
+                return `
+                    <div class="batch-card ${statusClass}">
+                        <div class="batch-header">
+                            <div class="batch-info">
+                                <div class="batch-name">${batch.batch_name}</div>
+                                <div class="batch-code">${batch.batch_code}</div>
+                                <div class="batch-meta">
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-user"></i>
+                                        <span>${teacherName}</span>
+                                    </div>
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-book"></i>
+                                        <span>${subjects.length} Subject${subjects.length !== 1 ? 's' : ''}</span>
+                                    </div>
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-users"></i>
+                                        <span>${batch.current_students || 0}/${batch.max_students || 30} students</span>
+                                    </div>
+                                </div>
+                                <div class="batch-meta">
+                                    <div class="batch-meta-item">
+                                        <i class="fas fa-clock"></i>
+                                        <span>${scheduleText}</span>
+                                    </div>
+                                </div>
+                                <!-- Display subjects as tags -->
+                                <div class="subjects-container">
+                                    ${subjects.map(subject => `
+                                        <span class="subject-tag">${subject}</span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="batch-status status-${statusClass}">${statusText}</div>
+                        </div>
+                        <div class="batch-details">
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <span class="detail-label">Start Date</span>
+                                    <span class="detail-value">${batch.start_date ? formatDate(batch.start_date) : 'Not set'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">End Date</span>
+                                    <span class="detail-value">${batch.end_date ? formatDate(batch.end_date) : 'Not set'}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Price</span>
+                                    <span class="detail-value">₹${batch.batch_price || 0}</span>
+                                </div>
+                            </div>
+                            ${batch.description ? `
+                                <div class="detail-item">
+                                    <span class="detail-label">Description</span>
+                                    <span class="detail-value">${batch.description}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="batch-actions">
+                            ${renderBatchActions(batch, type)}
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderBatchActions(batch, type) {
+                if (currentUserRole === 'student') {
+                    if (type === 'my') {
+                        if (batch.enrollment_status === 'pending') {
+                            return `<div style="color: var(--warning); font-style: italic;">Enrollment pending approval</div>`;
+                        } else if (batch.enrollment_status === 'approved') {
+                            return `
+                                <button class="action-btn btn-view" data-batch-id="${batch.id}">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            `;
+                        }
+                    } else if (type === 'institute') {
+                        return `
+                            <button class="action-btn btn-join" data-batch-id="${batch.id}" data-batch-code="${batch.batch_code}">
+                                <i class="fas fa-sign-in-alt"></i> Join
+                            </button>
+                        `;
+                    }
+                } else if (currentUserRole === 'teacher') {
+                    // Teachers can only view batches
+                    return `
+                        <button class="action-btn btn-view" data-batch-id="${batch.id}">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    `;
+                } else if (currentUserRole === 'admin') {
+                    // Admin can edit and view all batches
+                    return `
+                        <button class="action-btn btn-edit" data-batch-id="${batch.id}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="action-btn btn-view" data-batch-id="${batch.id}">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                    `;
+                }
+                
+                return '';
+            }
+
+            // Subject Management Functions
+            function initializeSubjects() {
+                currentSubjects = [];
+                updateSubjectsPreview();
+            }
+
+            function addSubject() {
+                const subjectInput = document.getElementById('subjectInput');
+                const subject = subjectInput.value.trim();
+                
+                if (!subject) {
+                    alert('Please enter a subject name');
+                    return;
+                }
+                
+                // Add to subjects array if not already present
+                if (!currentSubjects.includes(subject)) {
+                    currentSubjects.push(subject);
+                    subjectInput.value = '';
+                    updateSubjectsPreview();
+                } else {
+                    alert('Subject already added');
+                }
+            }
+
+            function removeSubject(subject) {
+                currentSubjects = currentSubjects.filter(s => s !== subject);
+                updateSubjectsPreview();
+            }
+
+            function updateSubjectsPreview() {
+                const previewContent = document.getElementById('subjectsPreview');
+                const subjectCount = document.getElementById('subjectCount');
+                
+                subjectCount.textContent = `${currentSubjects.length} subject${currentSubjects.length !== 1 ? 's' : ''} added`;
+                
+                if (currentSubjects.length === 0) {
+                    previewContent.innerHTML = '<div class="no-schedule">No subjects added yet</div>';
+                    return;
+                }
+                
+                let html = '';
+                currentSubjects.forEach(subject => {
+                    html += `
+                        <span class="subject-tag">
+                            ${subject}
+                            <button type="button" class="remove-subject" data-subject="${subject}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </span>
+                    `;
+                });
+                
+                previewContent.innerHTML = html;
+                
+                // Add event listeners to remove buttons
+                previewContent.querySelectorAll('.remove-subject').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const subject = this.getAttribute('data-subject');
+                        removeSubject(subject);
+                    });
+                });
+            }
+
+            function loadSubjectsIntoForm(subjectsArray) {
+                currentSubjects = safeArrayParse(subjectsArray, []);
+                updateSubjectsPreview();
+            }
+
+            // Schedule Management Functions
+            function initializeScheduleTable() {
+                currentSchedule = {};
+                updateSchedulePreview();
+            }
+
+            function addScheduleTime() {
+                const daySelect = document.querySelector('.day-select');
+                const startTime = document.querySelector('.start-time');
+                const endTime = document.querySelector('.end-time');
+                
+                const day = daySelect.value;
+                const start = startTime.value;
+                const end = endTime.value;
+                
+                if (!day) {
+                    alert('Please select a day');
+                    return;
+                }
+                
+                if (!start || !end) {
+                    alert('Please select both start and end times');
+                    return;
+                }
+                
+                if (start >= end) {
+                    alert('End time must be after start time');
+                    return;
+                }
+                
+                // Add to schedule
+                currentSchedule[day] = `${start} - ${end}`;
+                
+                // Reset inputs
+                startTime.value = '09:00';
+                endTime.value = '10:00';
+                
+                updateSchedulePreview();
+            }
+
+            function removeScheduleTime(day) {
+                delete currentSchedule[day];
+                updateSchedulePreview();
+            }
+
+            function updateSchedulePreview() {
+                const previewContent = document.getElementById('schedulePreviewContent');
+                
+                if (Object.keys(currentSchedule).length === 0) {
+                    previewContent.innerHTML = '<div class="no-schedule">No schedule added yet</div>';
+                    return;
+                }
+                
+                let html = '';
+                Object.entries(currentSchedule).forEach(([day, time]) => {
+                    html += `
+                        <div class="schedule-item">
+                            <span style="font-weight: 500; text-transform: capitalize;">${day}</span>
+                            <span>${time}</span>
+                            <button type="button" class="remove-schedule" data-day="${day}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                previewContent.innerHTML = html;
+                
+                // Add event listeners to remove buttons
+                previewContent.querySelectorAll('.remove-schedule').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const day = this.getAttribute('data-day');
+                        removeScheduleTime(day);
+                    });
+                });
+            }
+
+            function loadScheduleIntoTable(scheduleData) {
+                currentSchedule = safeJsonParse(scheduleData, {});
+                updateSchedulePreview();
+            }
+
+            function setupEventListeners() {
+                // Create batch button (only for admin)
+                document.getElementById('createBatchBtn').addEventListener('click', showCreateBatchModal);
+                document.getElementById('joinBatchBtn').addEventListener('click', showJoinBatchModal);
+                
+                // Modal close buttons
+                document.getElementById('closeBatchModal').addEventListener('click', closeBatchModal);
+                document.getElementById('closeJoinBatchModal').addEventListener('click', closeJoinBatchModal);
+                document.getElementById('cancelBatchBtn').addEventListener('click', closeBatchModal);
+                document.getElementById('cancelJoinBatchBtn').addEventListener('click', closeJoinBatchModal);
+                
+                // Form submissions
+                document.getElementById('batchForm').addEventListener('submit', handleBatchSubmit);
+                document.getElementById('joinBatchForm').addEventListener('submit', handleJoinBatchSubmit);
+                
+                // Subject management
+                document.getElementById('addSubjectBtn').addEventListener('click', addSubject);
+                document.getElementById('subjectInput').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addSubject();
+                    }
+                });
+                
+                // Schedule management
+                document.querySelector('.add-schedule').addEventListener('click', addScheduleTime);
+                document.getElementById('clearSchedule').addEventListener('click', function() {
+                    currentSchedule = {};
+                    updateSchedulePreview();
+                });
+                
+                // Close modals when clicking outside
+                document.getElementById('batchModal').addEventListener('click', function(e) {
+                    if (e.target === this) closeBatchModal();
+                });
+                document.getElementById('joinBatchModal').addEventListener('click', function(e) {
+                    if (e.target === this) closeJoinBatchModal();
+                });
+            }
+
+            function showCreateBatchModal() {
+                // Only allow admin to create batches
+                if (currentUserRole !== 'admin') {
+                    alert('Only administrators can create batches.');
+                    return;
+                }
+                
+                editingBatch = null;
+                document.getElementById('batchModalTitle').textContent = 'Create New Batch';
+                document.getElementById('submitBatchText').textContent = 'Create Batch';
+                document.getElementById('batchForm').reset();
+                initializeSubjects();
+                initializeScheduleTable();
+                document.getElementById('batchModal').style.display = 'flex';
+            }
+
+            function showJoinBatchModal() {
+                document.getElementById('joinBatchForm').reset();
+                document.getElementById('joinBatchModal').style.display = 'flex';
+            }
+
+            function closeBatchModal() {
+                document.getElementById('batchModal').style.display = 'none';
+                editingBatch = null;
+            }
+
+            function closeJoinBatchModal() {
+                document.getElementById('joinBatchModal').style.display = 'none';
+            }
+
+            async function handleBatchSubmit(e) {
+                e.preventDefault();
+                
+                // Double check that only admin can create batches
+                if (currentUserRole !== 'admin') {
+                    alert('Only administrators can create batches.');
+                    return;
+                }
+                
+                // Validate that at least one subject is added
+                if (currentSubjects.length === 0) {
+                    alert('Please add at least one subject');
+                    return;
+                }
+                
+                const submitBtn = document.getElementById('submitBatchBtn');
+                const submitText = document.getElementById('submitBatchText');
+                const submitLoader = document.getElementById('submitBatchLoader');
+                
+                submitBtn.disabled = true;
+                submitText.textContent = 'Saving...';
+                submitLoader.style.display = 'inline-block';
+                
+                try {
+                    const batchData = {
+                        batch_name: document.getElementById('batchName').value,
+                        batch_code: document.getElementById('batchCode').value.toUpperCase(),
+                        subject: currentSubjects, // Now an array of subjects
+                        batch_price: parseFloat(document.getElementById('batchPrice').value) || 0,
+                        max_students: parseInt(document.getElementById('maxStudents').value) || 30,
+                        start_date: document.getElementById('startDate').value || null,
+                        end_date: document.getElementById('endDate').value || null,
+                        description: document.getElementById('description').value || null,
+                        schedule: currentSchedule,
+                        institute_code: currentInstitute.institute_code,
+                        teacher_id: currentUserData.user_id,
+                        status: 'active'
+                    };
+                    
+                    if (editingBatch) {
+                        // Update existing batch
+                        const { error } = await supabase
+                            .from('batches')
+                            .update(batchData)
+                            .eq('id', editingBatch.id);
+                        
+                        if (error) throw error;
+                    } else {
+                        // Create new batch
+                        const { error } = await supabase
+                            .from('batches')
+                            .insert([batchData]);
+                        
+                        if (error) throw error;
+                    }
+                    
+                    closeBatchModal();
+                    await loadBatches();
+                    showSuccessMessage(editingBatch ? 'Batch updated successfully!' : 'Batch created successfully!');
+                    
+                } catch (error) {
+                    console.error('Error saving batch:', error);
+                    alert('Error saving batch: ' + error.message);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitText.textContent = editingBatch ? 'Update Batch' : 'Create Batch';
+                    submitLoader.style.display = 'none';
+                }
+            }
+
+            async function handleJoinBatchSubmit(e) {
+                e.preventDefault();
+                
+                const submitBtn = document.getElementById('submitJoinBatchBtn');
+                const submitText = document.getElementById('submitJoinBatchText');
+                const submitLoader = document.getElementById('submitJoinBatchLoader');
+                
+                submitBtn.disabled = true;
+                submitText.textContent = 'Submitting...';
+                submitLoader.style.display = 'inline-block';
+                
+                try {
+                    const batchCode = document.getElementById('batchCodeJoin').value.toUpperCase();
+                    const reason = document.getElementById('joinReason').value;
+                    
+                    // First, find the batch
+                    const { data: batch, error: batchError } = await supabase
+                        .from('batches')
+                        .select('*')
+                        .eq('batch_code', batchCode)
+                        .eq('institute_code', currentInstitute.institute_code)
+                        .single();
+                    
+                    if (batchError) throw new Error('Batch not found or invalid batch code');
+                    
+                    // Create batch enrollment request
+                    const { error: requestError } = await supabase
+                        .from('requests')
+                        .insert([{
+                            user_id: currentUserData.user_id,
+                            institute_code: currentInstitute.institute_code,
+                            request_type: 'batch_enrollment',
+                            target_id: batch.id.toString(),
+                            user_role: 'student',
+                            request_data: {
+                                batch_code: batchCode,
+                                reason: reason,
+                                batch_name: batch.batch_name,
+                                subject: Array.isArray(batch.subject) ? batch.subject.join(', ') : batch.subject
+                            },
+                            status: 'pending'
+                        }]);
+                    
+                    if (requestError) throw requestError;
+                    
+                    closeJoinBatchModal();
+                    showSuccessMessage('Join request submitted successfully!');
+                    
+                } catch (error) {
+                    console.error('Error submitting join request:', error);
+                    alert('Error submitting request: ' + error.message);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitText.textContent = 'Submit Request';
+                    submitLoader.style.display = 'none';
+                }
+            }
+
+            function attachBatchActionListeners(container, type) {
+                // Join batch buttons
+                container.querySelectorAll('.btn-join').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (currentUserRole === 'student') {
+                            const batchCode = this.getAttribute('data-batch-code');
+                            document.getElementById('batchCodeJoin').value = batchCode;
+                            showJoinBatchModal();
+                        }
+                    });
+                });
+                
+                // Edit batch buttons (only for admin)
+                container.querySelectorAll('.btn-edit').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (currentUserRole === 'admin') {
+                            const batchId = this.getAttribute('data-batch-id');
+                            editBatch(batchId);
+                        }
+                    });
+                });
+            }
+
+            async function editBatch(batchId) {
+                // Only allow admin to edit batches
+                if (currentUserRole !== 'admin') {
+                    alert('Only administrators can edit batches.');
+                    return;
+                }
+                
+                try {
+                    const { data: batch, error } = await supabase
+                        .from('batches')
+                        .select('*')
+                        .eq('id', batchId)
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    editingBatch = batch;
+                    document.getElementById('batchModalTitle').textContent = 'Edit Batch';
+                    document.getElementById('submitBatchText').textContent = 'Update Batch';
+                    
+                    // Fill form with batch data
+                    document.getElementById('batchName').value = batch.batch_name;
+                    document.getElementById('batchCode').value = batch.batch_code;
+                    document.getElementById('batchPrice').value = batch.batch_price;
+                    document.getElementById('maxStudents').value = batch.max_students;
+                    document.getElementById('startDate').value = batch.start_date;
+                    document.getElementById('endDate').value = batch.end_date;
+                    document.getElementById('description').value = batch.description || '';
+                    
+                    // Load subjects data
+                    loadSubjectsIntoForm(batch.subject);
+                    
+                    // Load schedule data
+                    loadScheduleIntoTable(batch.schedule);
+                    
+                    document.getElementById('batchModal').style.display = 'flex';
+                    
+                } catch (error) {
+                    console.error('Error loading batch for edit:', error);
+                    alert('Error loading batch: ' + error.message);
+                }
+            }
+
+            function showSuccessMessage(message) {
+                // Create a temporary success message
+                const successDiv = document.createElement('div');
+                successDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: var(--success);
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: var(--shadow);
+                    z-index: 10000;
+                    font-weight: 500;
+                `;
+                successDiv.textContent = message;
+                document.body.appendChild(successDiv);
+                
+                setTimeout(() => {
+                    document.body.removeChild(successDiv);
+                }, 3000);
+            }
+
+            function showError(message) {
+                const errorElement = document.getElementById('supabaseError');
+                const errorText = document.getElementById('supabaseErrorText');
+                errorText.textContent = message;
+                errorElement.style.display = 'flex';
+            }
+
+            function formatDate(dateString) {
+                if (!dateString) return 'Not set';
+                return new Date(dateString).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+        });
+    </script>
+</body>
+</html>
