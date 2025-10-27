@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #3498db;
+            --primary-dark: #2980b9;
+            --primary-light: #5dade2;
+            --teacher-color: #9b59b6;
+            --teacher-dark: #8e44ad;
+            --student-color: #27ae60;
+            --student-dark: #219653;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --bg-light: #ecf0f1;
+            --success: #2ecc71;
+            --error: #e74c3c;
+            --warning: #f39c12;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --bottom-nav-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            padding-bottom: var(--bottom-nav-height);
+            min-height: 100vh;
+        }
+        
+        /* Header Styles */
+        .header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header.teacher-header {
+            background: linear-gradient(135deg, var(--teacher-color) 0%, var(--teacher-dark) 100%);
+        }
+        
+        .header.student-header {
+            background: linear-gradient(135deg, var(--student-color) 0%, var(--student-dark) 100%);
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 3px solid white;
+            box-shadow: var(--shadow);
+        }
+        
+        .user-avatar .placeholder {
+            color: var(--primary-blue);
+            font-size: 24px;
+        }
+        
+        .teacher-avatar .placeholder {
+            color: var(--teacher-color);
+        }
+        
+        .student-avatar .placeholder {
+            color: var(--student-color);
+        }
+        
+        .header-text {
+            flex: 1;
+        }
+        
+        .header-text h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .header-text p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* Content Styles */
+        .content {
+            padding: 20px 15px;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-light);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .teacher-section-title {
+            color: var(--teacher-color);
+            border-bottom: 2px solid var(--teacher-color);
+        }
+
+        .student-section-title {
+            color: var(--student-color);
+            border-bottom: 2px solid var(--student-color);
+        }
+
+        /* Filter Section */
+        .filter-section {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+        
+        .filter-group input, .filter-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+            background-color: #f9f9f9;
+        }
+        
+        .filter-group input:focus, .filter-group select:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+            background-color: white;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-1px);
+        }
+
+        /* Attendance Cards (Student View) */
+        .attendance-cards {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .attendance-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .attendance-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow);
+        }
+        
+        .subject-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .subject-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        .faculty-name {
+            font-size: 14px;
+            color: var(--text-light);
+            font-style: italic;
+        }
+        
+        .attendance-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        
+        .percentage {
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .percentage.high {
+            color: var(--success);
+        }
+        
+        .percentage.medium {
+            color: var(--warning);
+        }
+        
+        .percentage.low {
+            color: var(--error);
+        }
+
+        /* Attendance Table (Teacher View) */
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        .attendance-table th,
+        .attendance-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .attendance-table th {
+            background: var(--primary-blue);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .attendance-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .attendance-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .attendance-toggle {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .toggle-label {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        
+        .toggle-label input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--success);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Subject Tags */
+        .subjects-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .subject-tag {
+            background: var(--primary-blue);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: var(--bottom-nav-height);
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 8px 0;
+            text-decoration: none;
+            color: var(--text-light);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: var(--primary-blue);
+        }
+
+        .teacher-nav-item.active {
+            color: var(--teacher-color);
+        }
+
+        .student-nav-item.active {
+            color: var(--student-color);
+        }
+        
+        .nav-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+        
+        .nav-label {
+            font-size: 10px;
+            font-weight: 500;
+        }
+        
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .loading-state .loading {
+            margin: 0 auto 15px;
+        }
+        
+        /* Connection Error */
+        .connection-error {
+            background-color: rgba(231, 76, 60, 0.1);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* No Data State */
+        .no-data {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+        
+        .no-data i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .filter-section {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                min-width: 100%;
+            }
+            
+            .attendance-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .attendance-table {
+                font-size: 14px;
+            }
+            
+            .attendance-table th,
+            .attendance-table td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="header" id="profileHeader">
+        <div class="header-content">
+            <div class="user-avatar" id="userAvatar">
+                <div class="placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+            <div class="header-text">
+                <h1 id="userName">Loading...</h1>
+                <p id="userRole">Attendance Management</p>
+                <div class="role-badge" id="roleBadge"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Connection Error -->
+    <div class="connection-error" id="supabaseError">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="supabaseErrorText">Connection error</span>
+    </div>
+
+    <!-- Main Content -->
+    <main class="content">
+        <!-- Student View -->
+        <div id="studentView" style="display: none;">
+            <section class="section">
+                <h2 class="section-title student-section-title">
+                    <i class="fas fa-filter"></i>
+                    Filter Attendance
+                </h2>
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label for="fromDate">From Date</label>
+                        <input type="date" id="fromDate">
+                    </div>
+                    <div class="filter-group">
+                        <label for="toDate">To Date</label>
+                        <input type="date" id="toDate">
+                    </div>
+                    <div class="filter-group">
+                        <label for="subjectFilter">Subject</label>
+                        <select id="subjectFilter">
+                            <option value="">All Subjects</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-primary" id="applyFilter">
+                            <i class="fas fa-check"></i> Apply Filter
+                        </button>
+                        <button class="btn" id="clearFilter" style="margin-left: 10px; background: var(--bg-light);">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title student-section-title">
+                    <i class="fas fa-chart-line"></i>
+                    Attendance Summary
+                </h2>
+                <div class="attendance-cards" id="attendanceCards">
+                    <div class="loading-state">
+                        <div class="loading"></div>
+                        <p>Loading attendance data...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Teacher/Admin View -->
+        <div id="teacherView" style="display: none;">
+            <section class="section">
+                <h2 class="section-title teacher-section-title">
+                    <i class="fas fa-filter"></i>
+                    Mark Attendance
+                </h2>
+                <div class="filter-section">
+                    <div class="filter-group">
+                        <label for="batchSelect">Select Batch</label>
+                        <select id="batchSelect">
+                            <option value="">Select Batch</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="attendanceDate">Attendance Date</label>
+                        <input type="date" id="attendanceDate" value="">
+                    </div>
+                    <div class="filter-group">
+                        <label for="subjectSelect">Subject</label>
+                        <select id="subjectSelect">
+                            <option value="">Select Subject</option>
+                        </select>
+                    </div>
+                    <div class="filter-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-primary" id="loadStudents">
+                            <i class="fas fa-users"></i> Load Students
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" id="attendanceMarkingSection" style="display: none;">
+                <h2 class="section-title teacher-section-title">
+                    <i class="fas fa-clipboard-list"></i>
+                    Student List - <span id="currentSubject"></span>
+                </h2>
+                <div class="attendance-info" style="margin-bottom: 15px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
+                    <strong>Batch:</strong> <span id="currentBatchName"></span> | 
+                    <strong>Date:</strong> <span id="currentDate"></span> | 
+                    <strong>Subject:</strong> <span id="currentSubjectName"></span>
+                </div>
+                <div class="attendance-table-container">
+                    <table class="attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Attendance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentList">
+                        </tbody>
+                    </table>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button class="btn btn-success" id="saveAttendance">
+                        <i class="fas fa-save"></i> Save Attendance
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Loading State -->
+        <section class="section" id="loadingSection">
+            <div class="loading-state">
+                <div class="loading"></div>
+                <p>Loading attendance data...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <a href="request.html" class="nav-item">
+            <i class="fas fa-bell nav-icon"></i>
+            <span class="nav-label">Requests</span>
+        </a>
+        <a href="batches.html" class="nav-item">
+            <i class="fas fa-users nav-icon"></i>
+            <span class="nav-label">Batches</span>
+        </a>
+        <a href="attendance.html" class="nav-item active">
+            <i class="fas fa-clipboard-check nav-icon"></i>
+            <span class="nav-label">Attendance</span>
+        </a>
+        <a href="index.html" class="nav-item">
+            <i class="fas fa-tachometer-alt nav-icon"></i>
+            <span class="nav-label">Dashboard</span>
+        </a>
+        <a href="profile.html" class="nav-item" id="profileNavItem">
+            <i class="fas fa-user nav-icon"></i>
+            <span class="nav-label">Profile</span>
+        </a>
+    </nav>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://jvwqmjtbttpyybhmpgnt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2d3FtanRidHRweXliaG1wZ250Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk1MTMwMzAsImV4cCI6MjA3NTA4OTAzMH0.VW0zTnCxi0X2ZTKVWZ_H_CvQynqmP-7maDFkKhZVEcs';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentUser = null;
+            let currentUserData = null;
+            let currentUserRole = null;
+            let currentInstitute = null;
+            let studentBatches = [];
+            let teacherBatches = [];
+
+            // Safe array parsing for subjects
+            function safeArrayParse(arr, defaultValue = []) {
+                if (!arr) return defaultValue;
+                if (Array.isArray(arr)) return arr;
+                if (typeof arr === 'string') {
+                    try {
+                        return JSON.parse(arr);
+                    } catch (e) {
+                        // If it's a comma-separated string, split it
+                        return arr.split(',').map(s => s.trim()).filter(s => s);
+                    }
+                }
+                return defaultValue;
+            }
+
+            // Initialize the page
+            initializePage();
+
+            async function initializePage() {
+                await getCurrentUser();
+                await loadCurrentUserData();
+                await determineUserRoleAndInstitute();
+                setupHeader();
+                setupEventListeners();
+                await initializeView();
+            }
+
+            async function getCurrentUser() {
+                try {
+                    const { data: { user }, error } = await supabase.auth.getUser();
+                    if (error) throw error;
+                    currentUser = user;
+                    
+                    if (!currentUser) {
+                        alert('Please login to view attendance');
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error getting current user:', error);
+                    alert('Please login to continue');
+                    window.location.href = 'login.html';
+                }
+            }
+
+            async function loadCurrentUserData() {
+                try {
+                    const { data, error } = await supabase
+                        .from('users')
+                        .select('*')
+                        .eq('auth_id', currentUser.id)
+                        .single();
+                    
+                    if (error) throw error;
+                    currentUserData = data;
+                    
+                } catch (error) {
+                    console.error('Error loading user data:', error);
+                }
+            }
+
+            async function determineUserRoleAndInstitute() {
+                if (!currentUserData) return;
+                
+                currentUserRole = currentUserData.role;
+                
+                // Determine institute based on role
+                if (currentUserRole === 'admin') {
+                    const { data } = await supabase
+                        .from('admin_institutes')
+                        .select('institute_name, institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .single();
+                    currentInstitute = data;
+                } else if (currentUserRole === 'teacher') {
+                    const { data } = await supabase
+                        .from('teacher_institutes')
+                        .select('institute_code')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data;
+                } else if (currentUserRole === 'student') {
+                    const { data } = await supabase
+                        .from('student_institutes')
+                        .select('institute_code, roll_number, section')
+                        .eq('user_id', currentUserData.user_id)
+                        .eq('status', 'confirmed')
+                        .single();
+                    currentInstitute = data;
+                }
+            }
+
+            function setupHeader() {
+                if (currentUserData) {
+                    document.getElementById('userName').textContent = currentUserData.full_name;
+                    document.getElementById('userRole').textContent = `${currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1)} Dashboard`;
+                    document.getElementById('roleBadge').textContent = currentUserRole.toUpperCase();
+                    
+                    // Set header color based on role
+                    const header = document.getElementById('profileHeader');
+                    if (currentUserRole === 'teacher') {
+                        header.classList.add('teacher-header');
+                        document.getElementById('userAvatar').classList.add('teacher-avatar');
+                    } else if (currentUserRole === 'student') {
+                        header.classList.add('student-header');
+                        document.getElementById('userAvatar').classList.add('student-avatar');
+                    }
+                }
+            }
+
+            async function initializeView() {
+                document.getElementById('loadingSection').style.display = 'block';
+                
+                if (currentUserRole === 'student') {
+                    document.getElementById('studentView').style.display = 'block';
+                    document.getElementById('teacherView').style.display = 'none';
+                    await loadStudentBatches();
+                    await loadStudentAttendance();
+                    populateSubjectFilter();
+                } else if (currentUserRole === 'teacher' || currentUserRole === 'admin') {
+                    document.getElementById('studentView').style.display = 'none';
+                    document.getElementById('teacherView').style.display = 'block';
+                    await loadTeacherBatches();
+                    populateBatchSelect();
+                    setDefaultDate();
+                }
+                
+                document.getElementById('loadingSection').style.display = 'none';
+            }
+
+            // Student Functions
+            async function loadStudentBatches() {
+                try {
+                    const { data, error } = await supabase
+                        .from('batch_students')
+                        .select(`
+                            batches!inner (*, users!batches_teacher_id_fkey(full_name))
+                        `)
+                        .eq('student_id', currentUserData.user_id)
+                        .eq('status', 'approved');
+                    
+                    if (error) throw error;
+                    
+                    studentBatches = (data || []).map(item => ({
+                        ...item.batches,
+                        subject: safeArrayParse(item.batches.subject)
+                    }));
+                } catch (error) {
+                    console.error('Error loading student batches:', error);
+                    showError('Error loading batches: ' + error.message);
+                }
+            }
+
+            async function loadStudentAttendance(fromDate = null, toDate = null, subject = '') {
+                try {
+                    let query = supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('student_id', currentUserData.user_id);
+                    
+                    if (fromDate && toDate) {
+                        query = query.gte('attendance_date', fromDate).lte('attendance_date', toDate);
+                    }
+                    
+                    if (subject) {
+                        query = query.eq('subject', subject);
+                    }
+                    
+                    const { data, error } = await query;
+                    
+                    if (error) throw error;
+                    
+                    displayStudentAttendance(data || []);
+                } catch (error) {
+                    console.error('Error loading attendance:', error);
+                    showError('Error loading attendance: ' + error.message);
+                }
+            }
+
+            function displayStudentAttendance(attendanceData) {
+                const container = document.getElementById('attendanceCards');
+                
+                if (studentBatches.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-data">
+                            <i class="fas fa-users"></i>
+                            <h3>No Batches Found</h3>
+                            <p>You are not enrolled in any batches yet.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                if (attendanceData.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-data">
+                            <i class="fas fa-clipboard-check"></i>
+                            <h3>No Attendance Records</h3>
+                            <p>No attendance records found for the selected filters.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Group attendance by subject
+                const attendanceBySubject = {};
+                attendanceData.forEach(record => {
+                    if (!attendanceBySubject[record.subject]) {
+                        attendanceBySubject[record.subject] = [];
+                    }
+                    attendanceBySubject[record.subject].push(record);
+                });
+                
+                let html = '';
+                
+                studentBatches.forEach(batch => {
+                    // For each subject in the batch, create a separate attendance card
+                    const subjects = safeArrayParse(batch.subject);
+                    
+                    subjects.forEach(subject => {
+                        const subjectAttendance = attendanceBySubject[subject] || [];
+                        const totalClasses = subjectAttendance.length;
+                        const presentClasses = subjectAttendance.filter(a => a.status === 'present').length;
+                        const percentage = totalClasses > 0 ? Math.round((presentClasses / totalClasses) * 100) : 0;
+                        
+                        let percentageClass = 'medium';
+                        if (percentage >= 75) percentageClass = 'high';
+                        else if (percentage < 50) percentageClass = 'low';
+                        
+                        html += `
+                            <div class="attendance-card">
+                                <div class="subject-header">
+                                    <div class="subject-name">${subject}</div>
+                                    <div class="batch-code">${batch.batch_code}</div>
+                                </div>
+                                <div class="faculty-name">Faculty: ${batch.users?.full_name || 'Not assigned'}</div>
+                                <div class="percentage ${percentageClass}">${percentage}%</div>
+                                <div class="attendance-stats">
+                                    <div class="stat-item">
+                                        <div class="stat-label">Total Classes</div>
+                                        <div class="stat-value">${totalClasses}</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Present</div>
+                                        <div class="stat-value" style="color: var(--success);">${presentClasses}</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Absent</div>
+                                        <div class="stat-value" style="color: var(--error);">${totalClasses - presentClasses}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+                
+                container.innerHTML = html;
+            }
+
+            function populateSubjectFilter() {
+                const subjectFilter = document.getElementById('subjectFilter');
+                const subjects = new Set();
+                
+                studentBatches.forEach(batch => {
+                    const batchSubjects = safeArrayParse(batch.subject);
+                    batchSubjects.forEach(subject => {
+                        subjects.add(subject);
+                    });
+                });
+                
+                subjects.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject;
+                    option.textContent = subject;
+                    subjectFilter.appendChild(option);
+                });
+            }
+
+            // Teacher/Admin Functions
+            async function loadTeacherBatches() {
+                try {
+                    const { data, error } = await supabase
+                        .from('batches')
+                        .select('*')
+                        .eq('institute_code', currentInstitute.institute_code)
+                        .eq('status', 'active');
+                    
+                    if (error) throw error;
+                    
+                    teacherBatches = (data || []).map(batch => ({
+                        ...batch,
+                        subject: safeArrayParse(batch.subject)
+                    }));
+                } catch (error) {
+                    console.error('Error loading teacher batches:', error);
+                    showError('Error loading batches: ' + error.message);
+                }
+            }
+
+            function populateBatchSelect() {
+                const batchSelect = document.getElementById('batchSelect');
+                batchSelect.innerHTML = '<option value="">Select Batch</option>';
+                
+                teacherBatches.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.id;
+                    option.textContent = `${batch.batch_name} (${batch.batch_code})`;
+                    batchSelect.appendChild(option);
+                });
+            }
+
+            function setDefaultDate() {
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('attendanceDate').value = today;
+            }
+
+            function populateSubjectSelect(batchId) {
+                const subjectSelect = document.getElementById('subjectSelect');
+                subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+                
+                const selectedBatch = teacherBatches.find(b => b.id == batchId);
+                if (selectedBatch) {
+                    const subjects = safeArrayParse(selectedBatch.subject);
+                    subjects.forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject;
+                        option.textContent = subject;
+                        subjectSelect.appendChild(option);
+                    });
+                }
+            }
+
+            async function loadStudentsForAttendance() {
+                const batchId = document.getElementById('batchSelect').value;
+                const attendanceDate = document.getElementById('attendanceDate').value;
+                const subject = document.getElementById('subjectSelect').value;
+                
+                if (!batchId || !attendanceDate || !subject) {
+                    alert('Please select batch, date, and subject');
+                    return;
+                }
+                
+                try {
+                    // Get enrolled students
+                    const { data: enrolledStudents, error: enrollError } = await supabase
+                        .from('batch_students')
+                        .select('student_id')
+                        .eq('batch_id', batchId)
+                        .eq('status', 'approved');
+                    
+                    if (enrollError) throw enrollError;
+                    
+                    if (!enrolledStudents || enrolledStudents.length === 0) {
+                        displayStudentList([], {});
+                        return;
+                    }
+                    
+                    // Get student details and roll numbers
+                    const studentIds = enrolledStudents.map(student => student.student_id);
+                    
+                    const { data: studentDetails, error: studentError } = await supabase
+                        .from('users')
+                        .select('user_id, full_name')
+                        .in('user_id', studentIds);
+                    
+                    if (studentError) throw studentError;
+                    
+                    const { data: studentInstituteDetails, error: instituteError } = await supabase
+                        .from('student_institutes')
+                        .select('user_id, roll_number')
+                        .in('user_id', studentIds)
+                        .eq('institute_code', currentInstitute.institute_code);
+                    
+                    if (instituteError) throw instituteError;
+                    
+                    // Combine the data
+                    const combinedStudents = studentDetails.map(student => {
+                        const instituteDetail = studentInstituteDetails.find(si => si.user_id === student.user_id);
+                        return {
+                            users: student,
+                            student_institutes: instituteDetail || { roll_number: 'N/A' }
+                        };
+                    });
+                    
+                    // Get existing attendance for the specific date and subject
+                    const { data: existingAttendance, error: attendanceError } = await supabase
+                        .from('attendance')
+                        .select('*')
+                        .eq('batch_id', batchId)
+                        .eq('attendance_date', attendanceDate)
+                        .eq('subject', subject);
+                    
+                    if (attendanceError) throw attendanceError;
+                    
+                    // Create attendance map for quick lookup
+                    const attendanceMap = {};
+                    existingAttendance.forEach(record => {
+                        attendanceMap[record.student_id] = record.status;
+                    });
+                    
+                    // Update display info
+                    const selectedBatch = teacherBatches.find(b => b.id == batchId);
+                    document.getElementById('currentBatchName').textContent = selectedBatch ? `${selectedBatch.batch_name} (${selectedBatch.batch_code})` : '';
+                    document.getElementById('currentDate').textContent = attendanceDate;
+                    document.getElementById('currentSubjectName').textContent = subject;
+                    
+                    displayStudentList(combinedStudents, attendanceMap);
+                    document.getElementById('attendanceMarkingSection').style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('Error loading students:', error);
+                    showError('Error loading students: ' + error.message);
+                }
+            }
+
+            function displayStudentList(students, attendanceMap) {
+                const container = document.getElementById('studentList');
+                container.innerHTML = '';
+                
+                students.forEach((item, index) => {
+                    const student = item.users;
+                    const rollNumber = item.student_institutes?.roll_number || `S${index + 1}`;
+                    const currentStatus = attendanceMap[student.user_id] || 'present';
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${rollNumber}</td>
+                        <td>${student.full_name}</td>
+                        <td>
+                            <div class="attendance-toggle">
+                                <label class="toggle-label">
+                                    <input type="checkbox" 
+                                           data-student-id="${student.user_id}" 
+                                           ${currentStatus === 'present' ? 'checked' : ''}>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                                <span>${currentStatus === 'present' ? 'Present' : 'Absent'}</span>
+                            </div>
+                        </td>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+
+            async function saveAttendance() {
+                const batchId = document.getElementById('batchSelect').value;
+                const attendanceDate = document.getElementById('attendanceDate').value;
+                const subject = document.getElementById('subjectSelect').value;
+                
+                if (!batchId || !attendanceDate || !subject) {
+                    alert('Please select batch, date, and subject');
+                    return;
+                }
+                
+                const attendanceData = [];
+                const checkboxes = document.querySelectorAll('#studentList input[type="checkbox"]');
+                
+                checkboxes.forEach(checkbox => {
+                    const studentId = checkbox.getAttribute('data-student-id');
+                    const status = checkbox.checked ? 'present' : 'absent';
+                    
+                    attendanceData.push({
+                        batch_id: parseInt(batchId),
+                        student_id: studentId,
+                        institute_code: currentInstitute.institute_code,
+                        subject: subject,
+                        attendance_date: attendanceDate,
+                        status: status,
+                        marked_by: currentUserData.user_id
+                    });
+                });
+                
+                try {
+                    // First, delete existing attendance for this batch, date, and specific subject
+                    const { error: deleteError } = await supabase
+                        .from('attendance')
+                        .delete()
+                        .eq('batch_id', batchId)
+                        .eq('attendance_date', attendanceDate)
+                        .eq('subject', subject);
+                    
+                    if (deleteError) throw deleteError;
+                    
+                    // Insert new attendance records for the specific subject only
+                    const { error: insertError } = await supabase
+                        .from('attendance')
+                        .insert(attendanceData);
+                    
+                    if (insertError) throw insertError;
+                    
+                    alert('Attendance saved successfully for ' + subject + '!');
+                    await loadStudentsForAttendance(); // Reload to show updated status
+                    
+                } catch (error) {
+                    console.error('Error saving attendance:', error);
+                    alert('Error saving attendance: ' + error.message);
+                }
+            }
+
+            function setupEventListeners() {
+                // Student event listeners
+                document.getElementById('applyFilter').addEventListener('click', async function() {
+                    const fromDate = document.getElementById('fromDate').value;
+                    const toDate = document.getElementById('toDate').value;
+                    const subject = document.getElementById('subjectFilter').value;
+                    
+                    await loadStudentAttendance(fromDate, toDate, subject);
+                });
+                
+                document.getElementById('clearFilter').addEventListener('click', function() {
+                    document.getElementById('fromDate').value = '';
+                    document.getElementById('toDate').value = '';
+                    document.getElementById('subjectFilter').value = '';
+                    loadStudentAttendance();
+                });
+                
+                // Teacher event listeners
+                document.getElementById('batchSelect').addEventListener('change', function() {
+                    populateSubjectSelect(this.value);
+                });
+                
+                document.getElementById('loadStudents').addEventListener('click', loadStudentsForAttendance);
+                document.getElementById('saveAttendance').addEventListener('click', saveAttendance);
+            }
+
+            function showError(message) {
+                const errorElement = document.getElementById('supabaseError');
+                const errorText = document.getElementById('supabaseErrorText');
+                errorText.textContent = message;
+                errorElement.style.display = 'flex';
+            }
+        });
+    </script>
+</body>
+</html>
